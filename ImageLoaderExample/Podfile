@@ -1,0 +1,3 @@
+platform :ios
+
+pod 'BrickView', :git => 'https://github.com/hirohisa/BrickView.git'
