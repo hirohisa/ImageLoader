@@ -261,7 +261,11 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
 {
     [self.lock lock];
 
-    NSData *data = [self.cache objectForKey:[self.request.URL absoluteString]];
+    NSData *data;
+    if (self.request.URL) {
+        data = [self.cache objectForKey:[self.request.URL absoluteString]];
+    }
+
     if (data) {
         self.responseData = data;
         [self finish];
@@ -367,7 +371,8 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
     self.responseData = [self.outputStream propertyForKey:NSStreamDataWrittenToMemoryStreamKey];
     [self outputStream_close];
 
-    if (self.responseData) {
+    if (self.responseData &&
+        self.request.URL) {
         [self.cache setObject:self.responseData forKey:[self.request.URL absoluteString]];
     }
 
