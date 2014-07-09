@@ -142,14 +142,6 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
 
 #pragma mark - getter
 
-- (NSOutputStream *)outputStream {
-    if (!_outputStream) {
-        _outputStream = [NSOutputStream outputStreamToMemory];
-    }
-
-    return _outputStream;
-}
-
 - (BOOL)isReady
 {
     return self.state == ImageLoaderOperationReadyState && [super isReady];
@@ -286,7 +278,6 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
 
     self.connection = [[NSURLConnection alloc] initWithRequest:self.request delegate:self startImmediately:NO];
     [self.connection scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-    [self.outputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     [self.connection start];
 
     [self.lock unlock];
@@ -307,11 +298,32 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
     [self.lock unlock];
 }
 
+#pragma mark - output stream
+
+- (void)outputStream_open
+{
+    self.outputStream = [NSOutputStream outputStreamToMemory];
+    [self.outputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+
+    [self.outputStream open];
+}
+
+- (void)outputStream_close
+{
+    if (!self.outputStream) {
+        return;
+    }
+
+    [self.outputStream close];
+    self.outputStream = nil;
+}
+
+
 #pragma mark - NSURLConnectionDataDelegate
 
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
 {
-    [self.outputStream open];
+    [self outputStream_open];
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data
@@ -353,11 +365,10 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection
 {
     self.responseData = [self.outputStream propertyForKey:NSStreamDataWrittenToMemoryStreamKey];
-    [self.outputStream close];
+    [self outputStream_close];
 
     if (self.responseData) {
         [self.cache setObject:self.responseData forKey:[self.request.URL absoluteString]];
-        self.outputStream = nil;
     }
 
     [self finish];
@@ -365,10 +376,7 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
 {
-    [self.outputStream close];
-    if (self.responseData) {
-        self.outputStream = nil;
-    }
+    [self outputStream_close];
 
     self.connection = nil;
     [self finish];
@@ -376,10 +384,7 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
 
 - (void)dealloc
 {
-    if (_outputStream) {
-        [_outputStream close];
-        _outputStream = nil;
-    }
+    [self outputStream_close];
 }
 
 @end
