@@ -352,7 +352,6 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
     if ([self.outputStream streamError]) {
         [self.connection cancel];
         [self performSelector:@selector(connection:didFailWithError:) withObject:self.connection withObject:[self.outputStream streamError]];
-        [self cancel];
         return;
     }
 }
