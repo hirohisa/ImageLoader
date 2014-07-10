@@ -10,7 +10,7 @@
 
 @interface UIImageView (ImageLoader)
 
-- (void)setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage;
-- (void)setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL finished))completion;
+- (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage;
+- (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL finished))completion;
 
 @end

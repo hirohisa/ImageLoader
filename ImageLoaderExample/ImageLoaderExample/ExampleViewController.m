@@ -126,7 +126,7 @@
         URL = nil;
     }
 
-    [cell.imageView setImageWithURL:URL placeholderImage:[UIImage imageWithColor:[UIColor grayColor]] completion:^(BOOL finished) {
+    [cell.imageView il_setImageWithURL:URL placeholderImage:[UIImage imageWithColor:[UIColor grayColor]] completion:^(BOOL finished) {
         NSLog(@"%d, finished %d", index, finished);
     }];
 

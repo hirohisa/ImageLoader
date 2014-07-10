@@ -91,12 +91,12 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 
 #pragma mark - set Image with URL
 
-- (void)setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage
+- (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage
 {
-    [self setImageWithURL:URL placeholderImage:placeholderImage completion:nil];
+    [self il_setImageWithURL:URL placeholderImage:placeholderImage completion:nil];
 }
 
-- (void)setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL))completion
+- (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL))completion
 {
     // prepare
     if (self.completion) {
