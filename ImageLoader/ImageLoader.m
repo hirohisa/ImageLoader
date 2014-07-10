@@ -294,6 +294,15 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
     if (![self isFinished]) {
         if (self.connection) {
             [self.connection cancel];
+
+            NSError *error = nil;
+            if ([self.request URL]) {
+                NSDictionary *userInfo = [NSDictionary dictionaryWithObject:[self.request URL] forKey:NSURLErrorFailingURLErrorKey];
+                error = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCancelled userInfo:userInfo];
+            }
+
+            [self performSelector:@selector(connection:didFailWithError:) withObject:self.connection withObject:error];
+
         } else {
             [self finish];
         }
@@ -350,7 +359,6 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
     }
 
     if ([self.outputStream streamError]) {
-        [self.connection cancel];
         [self performSelector:@selector(connection:didFailWithError:) withObject:self.connection withObject:[self.outputStream streamError]];
         return;
     }
@@ -382,7 +390,7 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
 {
     [self outputStream_close];
 
-    self.connection = nil;
+    [self.connection cancel];
     [self finish];
 }
 
