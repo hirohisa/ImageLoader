@@ -50,7 +50,6 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
 @property (nonatomic, strong) NSOutputStream *outputStream;
 @property (nonatomic, strong) NSData *responseData;
 
-@property (nonatomic, strong) id<ImageLoaderCacheProtocol> cache;
 @property (nonatomic, strong) NSRecursiveLock *lock;
 
 @end
@@ -122,7 +121,7 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
     }
 }
 
-- (id)initWithRequest:(NSURLRequest *)request name:(NSString *)name cache:(id<ImageLoaderCacheProtocol>)cache completion:(void (^)(UIImage *))completion
+- (id)initWithRequest:(NSURLRequest *)request name:(NSString *)name completion:(void (^)(NSURLRequest *, NSData *))completion
 {
     self = [self init];
     if (self) {
@@ -130,11 +129,9 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
         _state = ImageLoaderOperationReadyState;
         _lock = [[NSRecursiveLock alloc] init];
         _request = request;
-        _cache = cache;
         __weak typeof(self) wSelf = self;
         self.completionBlock = ^{
-            UIImage *image = [UIImage imageWithData:wSelf.responseData];
-            completion(image?:nil);
+            completion(wSelf.request, wSelf.responseData);
         };
     }
     return self;
@@ -246,11 +243,11 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
 
     self.state = ImageLoaderOperationFinishedState;
     self.connection = nil;
-    _request = nil;
 
     if (self.completionBlock) {
         self.completionBlock();
     }
+    _request = nil;
 
     [self.lock unlock];
 }
@@ -261,17 +258,7 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
 {
     [self.lock lock];
 
-    NSData *data;
-    if (self.request.URL) {
-        data = [self.cache objectForKey:[self.request.URL absoluteString]];
-    }
-
-    if (data) {
-        self.responseData = data;
-        [self finish];
-    } else {
-        [self operation_request];
-    }
+    [self operation_request];
 
     [self.lock unlock];
 }
@@ -377,11 +364,6 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
 {
     self.responseData = [self.outputStream propertyForKey:NSStreamDataWrittenToMemoryStreamKey];
     [self outputStream_close];
-
-    if (self.responseData &&
-        self.request.URL) {
-        [self.cache setObject:self.responseData forKey:[self.request.URL absoluteString]];
-    }
 
     [self finish];
 }
@@ -491,19 +473,49 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
 
 - (ImageLoaderOperation *)_getImageWithURL:(NSURL *)URL completion:(void (^)(UIImage *image))completion name:(NSString *)name
 {
+    if (!URL) {
+        if (completion) {
+            completion(nil);
+        }
+        return nil;
+    }
+
     for (ImageLoaderOperation *operation in self.operationQueue.operations) {
         if ([operation hasWithURL:URL andName:name]) {
             return operation;
         }
     }
 
+    NSData *data = [self.cache objectForKey:[URL absoluteString]];
+    if (data) {
+        UIImage *image = [UIImage imageWithData:data];
+        if (completion) {
+            completion(image);
+            return nil;
+        }
+    }
+
+
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];
     [request addValue:@"image/*" forHTTPHeaderField:@"Accept"];
 
-    ImageLoaderOperation *operation = [[ImageLoaderOperation alloc] initWithRequest:request
-                                                                               name:name
-                                                                              cache:self.cache
-                                                                         completion:completion];
+    __weak typeof(self) wSelf = self;
+    ImageLoaderOperation *operation =
+    [[ImageLoaderOperation alloc] initWithRequest:request name:name completion:^(NSURLRequest *req, NSData *data) {
+        UIImage *image;
+        if (data) {
+            image = [UIImage imageWithData:data];
+            if (image &&
+                req.URL) {
+                [wSelf.cache setObject:data forKey:[req.URL absoluteString]];
+            }
+        }
+
+        if (completion) {
+            completion(image);
+        }
+    }];
+
     [self enqueue:operation];
 
     return operation;

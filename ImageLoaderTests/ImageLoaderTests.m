@@ -101,24 +101,6 @@
                    @"operations call same URL");
 }
 
-- (void)testUseCacheIfSet
-{
-    ImageLoader *loader = [ImageLoader loader];
-
-    ImageLoaderTestCache *cache = [[ImageLoaderTestCache alloc] init];
-    loader.cache = cache;
-
-    NSURL *URL;
-
-    URL = [NSURL URLWithString:@"http://test/path"];
-    ImageLoaderOperation *operation1 = [loader getImageWithURL:URL];
-
-    XCTAssertEqual(operation1.cache,
-                   cache,
-                   @"operation's cache is not same cache");
-
-}
-
 - (void)testCacheDoesntConfirmProtocol
 {
     ImageLoader *loader = [ImageLoader loader];
