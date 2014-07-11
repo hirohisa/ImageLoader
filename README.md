@@ -18,12 +18,12 @@ Installation
 
 There are two ways to use this in your project:
 
-- Copy the Diskcached class files into your project
+- Copy the ImageLoader class files into your project
 
 - Install with CocoaPods to write Podfile
 ```ruby
 platform :ios
-pod 'ImageLoader', :git => 'https://github.com/hirohisa/ImageLoader.git'
+pod 'ImageLoader', '~> 0.0.1'
 ```
 
 Example with other modules
