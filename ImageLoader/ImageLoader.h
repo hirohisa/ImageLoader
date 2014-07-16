@@ -16,12 +16,6 @@ extern NSString *const ImageLoaderDidCompletionNotification;
 extern NSString *const ImageLoaderImageKey;
 extern NSString *const ImageLoaderURLKey;
 
-
-typedef NS_ENUM(NSInteger, ImageLoaderOperationMode) {
-    ImageLoaderOperationModeQueue = 0, // FIFO, default
-    ImageLoaderOperationModeStack, // LIFO
-};
-
 @protocol ImageLoaderCacheProtocol <NSObject>
 
 - (id)objectForKey:(id)key;

@@ -31,7 +31,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 @interface UIImageView (PrivateImageLoader)
 
 @property (nonatomic, strong) id imageLoaderObserver;
-@property (nonatomic, strong) NSURL *imageLoaderReuqestURL;
+@property (nonatomic, strong) NSURL *imageLoaderRequestURL;
 @property (nonatomic, copy)  void (^completion)(BOOL);
 
 @end
@@ -47,7 +47,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 - (void)il_setImage:(UIImage *)image
 {
-    self.imageLoaderReuqestURL = nil;
+    self.imageLoaderRequestURL = nil;
     [self il_setImage:image];
 }
 
@@ -69,14 +69,14 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
     objc_setAssociatedObject(self, ImageLoaderObserverKey, imageLoaderObserver, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (NSURL *)imageLoaderReuqestURL
+- (NSURL *)imageLoaderRequestURL
 {
     return objc_getAssociatedObject(self, ImageLoaderRequestURLKey);
 }
 
-- (void)setImageLoaderReuqestURL:(NSURL *)imageLoaderReuqestURL
+- (void)setImageLoaderRequestURL:(NSURL *)imageLoaderRequestURL
 {
-    objc_setAssociatedObject(self, ImageLoaderRequestURLKey, imageLoaderReuqestURL, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(self, ImageLoaderRequestURLKey, imageLoaderRequestURL, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 - (void (^)(BOOL))completion
@@ -121,7 +121,7 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
     }
 
     // URL
-    self.imageLoaderReuqestURL = URL;
+    self.imageLoaderRequestURL = URL;
 
     // completion
     if (completion) {
@@ -146,7 +146,7 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 
 - (void)il_setImage:(UIImage *)image withURL:(NSURL *)URL
 {
-    if ([URL isEqual:self.imageLoaderReuqestURL]) {
+    if ([URL isEqual:self.imageLoaderRequestURL]) {
         self.image = image;
         if (self.completion) {
             self.completion(YES);
