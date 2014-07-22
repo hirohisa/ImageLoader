@@ -16,12 +16,74 @@ NSString *const ImageLoaderImageKey = @"ImageLoaderImageKey";
 NSString *const ImageLoaderURLKey = @"ImageLoaderURLKey";
 
 
-typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
+typedef NS_ENUM(NSUInteger, ImageLoaderOperationState) {
     ImageLoaderOperationReadyState = 0,
     ImageLoaderOperationExecutingState = 1,
     ImageLoaderOperationFinishedState = 2,
 };
 
+
+@interface UIScreen (ImageLoader)
+
++ (CGFloat)il_scale;
+
+@end
+
+@implementation UIScreen (ImageLoader)
+
++ (CGFloat)il_scale
+{
+    static dispatch_once_t onceToken;
+    static CGFloat _scale = 1.f;
+    dispatch_once(&onceToken, ^{
+        _scale = [[self mainScreen] scale];
+    });
+    return _scale;
+}
+
+@end
+
+
+static UIImage * ILOptimizedImageWithData(NSData *data)
+{
+    if (!data || [data length] == 0) {
+        return nil;
+    }
+
+    UIImage *image = [UIImage imageWithData:data];
+    CGImageRef imageRef = CGImageRetain([image CGImage]);
+
+    size_t width = CGImageGetWidth(imageRef);
+    size_t height = CGImageGetHeight(imageRef);
+    size_t bitsPerComponent = CGImageGetBitsPerComponent(imageRef);
+
+    size_t bytesPerRow = 0;
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    CGBitmapInfo bitmapInfo = CGImageGetBitmapInfo(imageRef);
+
+    CGContextRef context = CGBitmapContextCreate(NULL, width, height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo);
+
+    CGColorSpaceRelease(colorSpace);
+
+    CGContextDrawImage(context, CGRectMake(.0f, .0f, width, height), imageRef);
+    CGImageRef optimizedImageRef = CGBitmapContextCreateImage(context);
+
+    CGContextRelease(context);
+
+    UIImage *optimizedImage = [[UIImage alloc] initWithCGImage:optimizedImageRef scale:[UIScreen il_scale] orientation:image.imageOrientation];
+    image = nil;
+
+    CGImageRelease(optimizedImageRef);
+    CGImageRelease(imageRef);
+
+    return optimizedImage;
+}
+
+
+//
+// ImageLoaderCache
+//
+//
 @interface ImageLoaderCache : NSCache <ImageLoaderCacheProtocol>
 
 @end
@@ -456,9 +518,7 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
                           };
         };
 
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [[NSNotificationCenter defaultCenter] postNotificationName:ImageLoaderDidCompletionNotification object:userInfo];
-        });
+        [[NSNotificationCenter defaultCenter] postNotificationName:ImageLoaderDidCompletionNotification object:userInfo];
     };
 
     return [self _getImageWithURL:URL completion:completion name:@"default"];
@@ -488,13 +548,12 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
 
     NSData *data = [self.cache objectForKey:[URL absoluteString]];
     if (data) {
-        UIImage *image = [UIImage imageWithData:data];
+        UIImage *image = ILOptimizedImageWithData(data);
         if (completion) {
             completion(image);
             return nil;
         }
     }
-
 
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];
     [request addValue:@"image/*" forHTTPHeaderField:@"Accept"];
@@ -503,8 +562,9 @@ typedef NS_ENUM(NSInteger, ImageLoaderOperationState) {
     ImageLoaderOperation *operation =
     [[ImageLoaderOperation alloc] initWithRequest:request name:name completion:^(NSURLRequest *req, NSData *data) {
         UIImage *image;
+
         if (data) {
-            image = [UIImage imageWithData:data];
+            image = ILOptimizedImageWithData(data);
             if (image &&
                 req.URL) {
                 [wSelf.cache setObject:data forKey:[req.URL absoluteString]];
