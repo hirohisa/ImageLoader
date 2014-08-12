@@ -28,14 +28,14 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 @end
 
-@interface UIImageView (ImageLoader_Private)
+@interface UIImageView (ImageLoader_Property)
 
 @property (nonatomic, strong) NSURL *imageLoaderRequestURL;
 @property (nonatomic, copy)  void (^completion)(BOOL);
 
 @end
 
-@implementation UIImageView (ImageLoader_Private)
+@implementation UIImageView (ImageLoader_Property)
 
 static const char *ImageLoaderRequestURLKey = "ImageLoaderRequestURLKey";
 static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
@@ -75,7 +75,9 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 - (void)il_setImage:(UIImage *)image
 {
     self.imageLoaderRequestURL = nil;
-    [self il_setImage:image];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self il_setImage:image];
+    });
 }
 
 #pragma mark - ImageLoader
@@ -100,7 +102,6 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 
 - (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL))completion
 {
-    // prepare
     if (self.completion) {
         self.completion(NO);
         self.completion = nil;
@@ -120,7 +121,6 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
     if (placeholderImage) {
         self.image = placeholderImage;
     }
-
     // URL
     self.imageLoaderRequestURL = URL;
 
@@ -129,19 +129,21 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
         self.completion = completion;
     }
 
-    [[[self class] il_sharedImageLoader] getImageWithURL:URL completion:^(UIImage *image) {
-        self.image = image;
+    __weak typeof(self) wSelf = self;
+    [[[self class] il_sharedImageLoader] getImageWithURL:URL completion:^(NSURLRequest *request, UIImage *image) {
+        [wSelf il_setImage:image withURL:request.URL];
     }];
 }
 
 - (void)il_setImage:(UIImage *)image withURL:(NSURL *)URL
 {
-    if ([URL isEqual:self.imageLoaderRequestURL]) {
+    BOOL equaled = [URL isEqual:self.imageLoaderRequestURL];
+    if (equaled) {
         self.image = image;
-        if (self.completion) {
-            self.completion(YES);
-            self.completion = nil;
-        }
+    }
+    if (self.completion) {
+        self.completion(equaled);
+        self.completion = nil;
     }
 }
 

@@ -8,7 +8,7 @@ Features
 
 - Simple methods with UIImageView Category.
 - A module for cache can be set by yourself.
-- An observer with NSNotification.
+- ~~An observer with NSNotification.~~
 - Loading images is handled by ImageLoader, not UIImageView.
 
 

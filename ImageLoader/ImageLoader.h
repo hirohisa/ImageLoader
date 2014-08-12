@@ -13,10 +13,6 @@ extern UIImage * ILOptimizedImageWithData(NSData *data);
 
 extern NSString *const ImageLoaderCacheNotConfirmToProtocolException;
 
-extern NSString *const ImageLoaderDidCompletionNotification;
-extern NSString *const ImageLoaderImageKey;
-extern NSString *const ImageLoaderURLKey;
-
 @protocol ImageLoaderCacheProtocol <NSObject>
 
 - (id)objectForKey:(id)key;
@@ -34,6 +30,6 @@ extern NSString *const ImageLoaderURLKey;
 
 + (instancetype)loader;
 
-- (ImageLoaderOperation *)getImageWithURL:(NSURL *)URL completion:(void (^)(UIImage *image))completion;
+- (ImageLoaderOperation *)getImageWithURL:(NSURL *)URL completion:(void (^)(NSURLRequest *request, UIImage *image))completion;
 
 @end

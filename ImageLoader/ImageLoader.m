@@ -11,11 +11,6 @@
 
 NSString *const ImageLoaderCacheNotConfirmToProtocolException = @"ImageLoaderDidCompletionNotification";
 
-NSString *const ImageLoaderDidCompletionNotification = @"ImageLoaderDidCompletionNotification";
-NSString *const ImageLoaderImageKey = @"ImageLoaderImageKey";
-NSString *const ImageLoaderURLKey = @"ImageLoaderURLKey";
-
-
 typedef NS_ENUM(NSUInteger, ImageLoaderOperationState) {
     ImageLoaderOperationReadyState = 0,
     ImageLoaderOperationExecutingState = 1,
@@ -46,26 +41,24 @@ typedef NS_ENUM(NSUInteger, ImageLoaderOperationState) {
 
 UIImage * ILOptimizedImageWithData(NSData *data)
 {
-    if (!data || [data length] == 0) {
+    if (!data || ![data length]) {
         return nil;
     }
 
     UIImage *image = [UIImage imageWithData:data];
-    CGImageRef imageRef = CGImageRetain([image CGImage]);
 
-    size_t width = CGImageGetWidth(imageRef);
-    size_t height = CGImageGetHeight(imageRef);
-    size_t bitsPerComponent = CGImageGetBitsPerComponent(imageRef);
+    CGContextRef context = CGBitmapContextCreate(
+                                                 NULL,
+                                                 CGImageGetWidth([image CGImage]),
+                                                 CGImageGetHeight([image CGImage]),
+                                                 CGImageGetBitsPerComponent([image CGImage]),
+                                                 0,
+                                                 CGColorSpaceCreateDeviceRGB(),
+                                                 CGImageGetBitmapInfo([image CGImage])
+                                                 );
 
-    size_t bytesPerRow = 0;
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    CGBitmapInfo bitmapInfo = CGImageGetBitmapInfo(imageRef);
 
-    CGContextRef context = CGBitmapContextCreate(NULL, width, height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo);
-
-    CGColorSpaceRelease(colorSpace);
-
-    CGContextDrawImage(context, CGRectMake(.0f, .0f, width, height), imageRef);
+    CGContextDrawImage(context, CGRectMake(.0f, .0f, CGImageGetWidth([image CGImage]), CGImageGetHeight([image CGImage])), [image CGImage]);
     CGImageRef optimizedImageRef = CGBitmapContextCreateImage(context);
 
     CGContextRelease(context);
@@ -74,7 +67,6 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     image = nil;
 
     CGImageRelease(optimizedImageRef);
-    CGImageRelease(imageRef);
 
     return optimizedImage;
 }
@@ -103,8 +95,6 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 @end
 
 @interface ImageLoaderOperation () <NSURLConnectionDataDelegate>
-
-@property (nonatomic, readonly) NSString *name;
 
 @property (nonatomic) ImageLoaderOperationState state;
 @property (nonatomic, readonly, strong) NSURLRequest *request;
@@ -186,23 +176,23 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     }
 }
 
-- (id)initWithRequest:(NSURLRequest *)request name:(NSString *)name completion:(void (^)(NSURLRequest *, NSData *))completion
+- (id)initWithRequest:(NSURLRequest *)request completion:(void (^)(NSURLRequest *, NSData *))completion
 {
     self = [self init];
     if (self) {
-        _name = name;
         _state = ImageLoaderOperationReadyState;
         _lock = [[NSRecursiveLock alloc] init];
         _request = request;
-        _completionBlocks = @[];
         if (completion) {
             _completionBlocks = @[completion];
+        } else {
+            _completionBlocks = @[];
         }
 
-        __weak typeof(self) weakSelf = self;
+        __weak typeof(self) wSelf = self;
         self.completionBlock = ^{
-            for (void(^completion)(NSURLRequest *, NSData *) in weakSelf.completionBlocks) {
-                completion(weakSelf.request, weakSelf.responseData);
+            for (void(^completion)(NSURLRequest *, NSData *) in wSelf.completionBlocks) {
+                completion(wSelf.request, wSelf.responseData);
             }
         };
     }
@@ -236,14 +226,6 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 - (BOOL)isConcurrent
 {
     return YES;
-}
-
-- (BOOL)hasURL:(NSURL *)URL
-{
-    if ([self.request.URL isEqual:URL]) {
-        return YES;
-    }
-    return NO;
 }
 
 #pragma mark - setter
@@ -431,11 +413,8 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 
 - (NSCachedURLResponse *)connection:(NSURLConnection *)connection willCacheResponse:(NSCachedURLResponse *)cachedResponse
 {
-    if ([self isCancelled]) {
-        return nil;
-    }
-
-    return cachedResponse;
+    // connection doesnt cache, operation use ImageLoader"s cache
+    return nil;
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection
@@ -512,59 +491,43 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 
 #pragma mark - public
 
-- (ImageLoaderOperation *)getImageWithURL:(NSURL *)URL
+- (ImageLoaderOperation *)getImageWithURL:(NSURL *)URL completion:(void (^)(NSURLRequest *, UIImage *))completion
 {
-    void (^completion)(UIImage *) = ^(UIImage *image) {
-        NSDictionary *userInfo = @{};
-
-        if (URL && image) {
-            userInfo  = @{
-                          ImageLoaderImageKey: image,
-                          ImageLoaderURLKey  : URL
-                          };
-        };
-
-        [[NSNotificationCenter defaultCenter] postNotificationName:ImageLoaderDidCompletionNotification object:userInfo];
-    };
-
-    return [self _getImageWithURL:URL completion:completion name:@"ImageLoader"];
-}
-
-- (ImageLoaderOperation *)getImageWithURL:(NSURL *)URL completion:(void (^)(UIImage *image))completion
-{
-    return [self _getImageWithURL:URL completion:completion name:nil];
+    return [self _getImageWithURL:URL completion:completion];
 }
 
 #pragma mark - private
 
-- (ImageLoaderOperation *)_getImageWithURL:(NSURL *)URL completion:(void (^)(UIImage *image))completion name:(NSString *)name
+- (ImageLoaderOperation *)_getImageWithURL:(NSURL *)URL completion:(void (^)(NSURLRequest *, UIImage *))completion
 {
     if (!URL) {
         if (completion) {
-            completion(nil);
+            completion(nil, nil);
         }
         return nil;
     }
 
     __weak typeof(self) wSelf = self;
-    void (^completionBlock)(NSURLRequest *, NSData *) = ^(NSURLRequest *req, NSData *data) {
+    void (^completionBlock)(NSURLRequest *, NSData *) = ^(NSURLRequest *request, NSData *data) {
         UIImage *image;
 
         if (data) {
             image = ILOptimizedImageWithData(data);
             if (image &&
-                req.URL) {
-                [wSelf.cache setObject:data forKey:[req.URL absoluteString]];
+                request.URL) {
+                [wSelf.cache setObject:data forKey:[request.URL absoluteString]];
             }
         }
 
         if (completion) {
-            completion(image);
+            completion(request, image);
         }
     };
 
+    // operation exists
     for (ImageLoaderOperation *operation in self.operationQueue.operations) {
-        if ([operation hasURL:URL]) {
+        if (!operation.isFinished &&
+            [operation.request.URL isEqual:URL]) {
             [operation addCompletionBlock:completionBlock];
             return operation;
         }
@@ -574,7 +537,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     if (data) {
         UIImage *image = ILOptimizedImageWithData(data);
         if (completion) {
-            completion(image);
+            completion(nil, image);
             return nil;
         }
     }
@@ -583,7 +546,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     [request addValue:@"image/*" forHTTPHeaderField:@"Accept"];
 
     ImageLoaderOperation *operation =
-    [[ImageLoaderOperation alloc] initWithRequest:request name:name completion:completionBlock];
+    [[ImageLoaderOperation alloc] initWithRequest:request completion:completionBlock];
 
     [self enqueue:operation];
 
