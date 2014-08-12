@@ -28,46 +28,17 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 @end
 
-@interface UIImageView (PrivateImageLoader)
+@interface UIImageView (ImageLoader_Private)
 
-@property (nonatomic, strong) id imageLoaderObserver;
 @property (nonatomic, strong) NSURL *imageLoaderRequestURL;
 @property (nonatomic, copy)  void (^completion)(BOOL);
 
 @end
 
-@implementation UIImageView (ImageLoader)
+@implementation UIImageView (ImageLoader_Private)
 
-#pragma mark - swizzling
-
-+ (void)load
-{
-    ILSwizzleInstanceMethod(self, @selector(setImage:), @selector(il_setImage:));
-}
-
-- (void)il_setImage:(UIImage *)image
-{
-    self.imageLoaderRequestURL = nil;
-    [self il_setImage:image];
-}
-
-#pragma mark - ImageLoader
-
-static const char *ImageLoaderObserverKey = "ImageLoaderObserverKey";
 static const char *ImageLoaderRequestURLKey = "ImageLoaderRequestURLKey";
 static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
-
-#pragma mark - getter/setter
-
-- (id)imageLoaderObserver
-{
-    return objc_getAssociatedObject(self, ImageLoaderObserverKey);
-}
-
-- (void)setImageLoaderObserver:(id)imageLoaderObserver
-{
-    objc_setAssociatedObject(self, ImageLoaderObserverKey, imageLoaderObserver, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
 
 - (NSURL *)imageLoaderRequestURL
 {
@@ -89,6 +60,37 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
     objc_setAssociatedObject(self, ImageLoaderCompletionKey, completion, OBJC_ASSOCIATION_COPY_NONATOMIC);
 }
 
+@end
+
+
+@implementation UIImageView (ImageLoader)
+
+#pragma mark - swizzling
+
++ (void)load
+{
+    ILSwizzleInstanceMethod(self, @selector(setImage:), @selector(il_setImage:));
+}
+
+- (void)il_setImage:(UIImage *)image
+{
+    self.imageLoaderRequestURL = nil;
+    [self il_setImage:image];
+}
+
+#pragma mark - ImageLoader
+
++ (ImageLoader *)il_sharedImageLoader
+{
+    static ImageLoader *_il_sharedImageLoader = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _il_sharedImageLoader = [[ImageLoader alloc] init];
+    });
+
+    return _il_sharedImageLoader;
+}
+
 #pragma mark - set Image with URL
 
 - (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage
@@ -104,11 +106,10 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
         self.completion = nil;
     }
 
-
     // cache exists
-    NSData *data = [[ImageLoader il_sharedLoader].cache objectForKey:[URL absoluteString]];
+    NSData *data = [[[self class] il_sharedImageLoader].cache objectForKey:[URL absoluteString]];
     if (data) {
-        self.image = [UIImage imageWithData:data];
+        self.image = ILOptimizedImageWithData(data);
         if (completion) {
             completion(YES);
             return;
@@ -128,20 +129,9 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
         self.completion = completion;
     }
 
-    if (!self.imageLoaderObserver) {
-        self.imageLoaderObserver =
-        [[NSNotificationCenter defaultCenter] addObserverForName:ImageLoaderDidCompletionNotification
-                                                          object:nil
-                                                           queue:[NSOperationQueue mainQueue]
-                                                      usingBlock:^(NSNotification *note)
-        {
-            if (note.object) {
-                [self il_setImage:note.object[ImageLoaderImageKey] withURL:note.object[ImageLoaderURLKey]];
-            }
-        }];
-    }
-
-    [[ImageLoader il_sharedLoader] getImageWithURL:URL];
+    [[[self class] il_sharedImageLoader] getImageWithURL:URL completion:^(UIImage *image) {
+        self.image = image;
+    }];
 }
 
 - (void)il_setImage:(UIImage *)image withURL:(NSURL *)URL

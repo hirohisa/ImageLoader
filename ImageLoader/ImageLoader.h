@@ -9,6 +9,7 @@
 @import Foundation;
 @import UIKit;
 
+extern UIImage * ILOptimizedImageWithData(NSData *data);
 
 extern NSString *const ImageLoaderCacheNotConfirmToProtocolException;
 
@@ -31,10 +32,8 @@ extern NSString *const ImageLoaderURLKey;
 
 @property (nonatomic, strong) id<ImageLoaderCacheProtocol> cache;
 
-+ (instancetype)il_sharedLoader;
 + (instancetype)loader;
 
-- (ImageLoaderOperation *)getImageWithURL:(NSURL *)URL;
 - (ImageLoaderOperation *)getImageWithURL:(NSURL *)URL completion:(void (^)(UIImage *image))completion;
 
 @end

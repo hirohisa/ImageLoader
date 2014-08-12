@@ -44,7 +44,7 @@ typedef NS_ENUM(NSUInteger, ImageLoaderOperationState) {
 @end
 
 
-static UIImage * ILOptimizedImageWithData(NSData *data)
+UIImage * ILOptimizedImageWithData(NSData *data)
 {
     if (!data || [data length] == 0) {
         return nil;
@@ -113,6 +113,9 @@ static UIImage * ILOptimizedImageWithData(NSData *data)
 @property (nonatomic, strong) NSData *responseData;
 
 @property (nonatomic, strong) NSRecursiveLock *lock;
+@property (nonatomic, readonly) NSArray *completionBlocks;
+
+- (void)addCompletionBlock:(void (^)(NSURLRequest *, NSData *))block;
 
 @end
 
@@ -191,12 +194,26 @@ static UIImage * ILOptimizedImageWithData(NSData *data)
         _state = ImageLoaderOperationReadyState;
         _lock = [[NSRecursiveLock alloc] init];
         _request = request;
-        __weak typeof(self) wSelf = self;
+        _completionBlocks = @[];
+        if (completion) {
+            _completionBlocks = @[completion];
+        }
+
+        __weak typeof(self) weakSelf = self;
         self.completionBlock = ^{
-            completion(wSelf.request, wSelf.responseData);
+            for (void(^completion)(NSURLRequest *, NSData *) in weakSelf.completionBlocks) {
+                completion(weakSelf.request, weakSelf.responseData);
+            }
         };
     }
     return self;
+}
+
+- (void)addCompletionBlock:(void (^)(NSURLRequest *, NSData *))block
+{
+    if (block) {
+        _completionBlocks = [self.completionBlocks arrayByAddingObject:block];
+    }
 }
 
 #pragma mark - getter
@@ -221,10 +238,9 @@ static UIImage * ILOptimizedImageWithData(NSData *data)
     return YES;
 }
 
-- (BOOL)hasWithURL:(NSURL *)URL andName:(NSString *)name
+- (BOOL)hasURL:(NSURL *)URL
 {
-    if ([self.request.URL isEqual:URL] &&
-        [self.name isEqual:name]) {
+    if ([self.request.URL isEqual:URL]) {
         return YES;
     }
     return NO;
@@ -453,16 +469,6 @@ static UIImage * ILOptimizedImageWithData(NSData *data)
 
 @implementation ImageLoader
 
-+ (instancetype)il_sharedLoader
-{
-    static dispatch_once_t onceToken;
-    __strong static ImageLoader *_singleton = nil;
-    dispatch_once(&onceToken, ^{
-        _singleton = [[self alloc] init];
-    });
-    return _singleton;
-}
-
 + (instancetype)loader
 {
     return [[self alloc] init];
@@ -521,7 +527,7 @@ static UIImage * ILOptimizedImageWithData(NSData *data)
         [[NSNotificationCenter defaultCenter] postNotificationName:ImageLoaderDidCompletionNotification object:userInfo];
     };
 
-    return [self _getImageWithURL:URL completion:completion name:@"default"];
+    return [self _getImageWithURL:URL completion:completion name:@"ImageLoader"];
 }
 
 - (ImageLoaderOperation *)getImageWithURL:(NSURL *)URL completion:(void (^)(UIImage *image))completion
@@ -540,8 +546,26 @@ static UIImage * ILOptimizedImageWithData(NSData *data)
         return nil;
     }
 
+    __weak typeof(self) wSelf = self;
+    void (^completionBlock)(NSURLRequest *, NSData *) = ^(NSURLRequest *req, NSData *data) {
+        UIImage *image;
+
+        if (data) {
+            image = ILOptimizedImageWithData(data);
+            if (image &&
+                req.URL) {
+                [wSelf.cache setObject:data forKey:[req.URL absoluteString]];
+            }
+        }
+
+        if (completion) {
+            completion(image);
+        }
+    };
+
     for (ImageLoaderOperation *operation in self.operationQueue.operations) {
-        if ([operation hasWithURL:URL andName:name]) {
+        if ([operation hasURL:URL]) {
+            [operation addCompletionBlock:completionBlock];
             return operation;
         }
     }
@@ -558,23 +582,8 @@ static UIImage * ILOptimizedImageWithData(NSData *data)
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];
     [request addValue:@"image/*" forHTTPHeaderField:@"Accept"];
 
-    __weak typeof(self) wSelf = self;
     ImageLoaderOperation *operation =
-    [[ImageLoaderOperation alloc] initWithRequest:request name:name completion:^(NSURLRequest *req, NSData *data) {
-        UIImage *image;
-
-        if (data) {
-            image = ILOptimizedImageWithData(data);
-            if (image &&
-                req.URL) {
-                [wSelf.cache setObject:data forKey:[req.URL absoluteString]];
-            }
-        }
-
-        if (completion) {
-            completion(image);
-        }
-    }];
+    [[ImageLoaderOperation alloc] initWithRequest:request name:name completion:completionBlock];
 
     [self enqueue:operation];
 

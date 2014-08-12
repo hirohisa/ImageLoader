@@ -36,6 +36,12 @@
 
 @end
 
+@interface UIImageView (Example)
+
++ (ImageLoader *)il_sharedImageLoader;
+
+@end
+
 @interface ExampleBrickViewCell : BrickViewCell
 
 @property (nonatomic, readonly) UIImageView *imageView;
@@ -136,7 +142,7 @@
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
 {
     NSLog(@"%s", __func__);
-    NSOperationQueue *queue = [[ImageLoader il_sharedLoader] performSelector:@selector(operationQueue)];
+    NSOperationQueue *queue = [[[UIImageView class] il_sharedImageLoader] performSelector:@selector(operationQueue)];
     for (NSOperation *op in queue.operations) {
         NSLog(@"%@, cancel %d finish %d", op, op.isCancelled, op.isFinished);
     }
