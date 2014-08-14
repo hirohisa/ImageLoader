@@ -1,4 +1,5 @@
 Pod::Spec.new do |s|
+
   s.name         =  "ImageLoader"
   s.version      =  "0.0.3"
   s.summary      =  "Library for async image loading"
@@ -17,5 +18,6 @@ Pod::Spec.new do |s|
 
   s.source_files = "ImageLoader"
   s.requires_arc = true
+  s.dependency     'Diskcached', '~> 0.1.1'
 
 end

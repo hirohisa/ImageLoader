@@ -10,12 +10,77 @@
 	<string>46</string>
 	<key>objects</key>
 	<dict>
+		<key>250D4164FC5F4D388C45A09A</key>
+		<dict>
+			<key>fileRef</key>
+			<string>44BDAC33F4FC4011B447CA91</string>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+		</dict>
+		<key>263ABADA4EF74F02A342A709</key>
+		<dict>
+			<key>includeInIndex</key>
+			<string>1</string>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>text.xcconfig</string>
+			<key>name</key>
+			<string>Pods.xcconfig</string>
+			<key>path</key>
+			<string>Pods/Pods.xcconfig</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
 		<key>3341AB8E404E4C16B56B86AD</key>
 		<dict>
 			<key>fileRef</key>
 			<string>8FCAD9AF54D844CB9EAB5B96</string>
 			<key>isa</key>
 			<string>PBXBuildFile</string>
+		</dict>
+		<key>37DEE66D1AEE4821AB40FD7D</key>
+		<dict>
+			<key>buildActionMask</key>
+			<string>2147483647</string>
+			<key>files</key>
+			<array/>
+			<key>inputPaths</key>
+			<array/>
+			<key>isa</key>
+			<string>PBXShellScriptBuildPhase</string>
+			<key>name</key>
+			<string>Check Pods Manifest.lock</string>
+			<key>outputPaths</key>
+			<array/>
+			<key>runOnlyForDeploymentPostprocessing</key>
+			<string>0</string>
+			<key>shellPath</key>
+			<string>/bin/sh</string>
+			<key>shellScript</key>
+			<string>diff "${PODS_ROOT}/../Podfile.lock" "${PODS_ROOT}/Manifest.lock" &gt; /dev/null
+if [[ $? != 0 ]] ; then
+    cat &lt;&lt; EOM
+error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.
+EOM
+    exit 1
+fi
+</string>
+			<key>showEnvVarsInLog</key>
+			<string>0</string>
+		</dict>
+		<key>44BDAC33F4FC4011B447CA91</key>
+		<dict>
+			<key>explicitFileType</key>
+			<string>archive.ar</string>
+			<key>includeInIndex</key>
+			<string>0</string>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>libPods.a</string>
+			<key>sourceTree</key>
+			<string>BUILT_PRODUCTS_DIR</string>
 		</dict>
 		<key>6562BC8D195D5F6C00CCE73D</key>
 		<dict>
@@ -26,6 +91,7 @@
 				<string>6562BC98195D5F6C00CCE73D</string>
 				<string>6562BC97195D5F6C00CCE73D</string>
 				<string>8D9A1E334CA845C0A30312B1</string>
+				<string>263ABADA4EF74F02A342A709</string>
 			</array>
 			<key>isa</key>
 			<string>PBXGroup</string>
@@ -106,6 +172,7 @@
 			<key>files</key>
 			<array>
 				<string>6562BC9A195D5F6C00CCE73D</string>
+				<string>250D4164FC5F4D388C45A09A</string>
 			</array>
 			<key>isa</key>
 			<string>PBXFrameworksBuildPhase</string>
@@ -135,9 +202,11 @@
 			<string>6562BCB9195D5F6C00CCE73D</string>
 			<key>buildPhases</key>
 			<array>
+				<string>37DEE66D1AEE4821AB40FD7D</string>
 				<string>6562BC92195D5F6C00CCE73D</string>
 				<string>6562BC93195D5F6C00CCE73D</string>
 				<string>6562BC94195D5F6C00CCE73D</string>
+				<string>946D27F3D87F41458F81C240</string>
 			</array>
 			<key>buildRules</key>
 			<array/>
@@ -189,6 +258,7 @@
 				<string>6562BCA7195D5F6C00CCE73D</string>
 				<string>6562BCAA195D5F6C00CCE73D</string>
 				<string>8FCAD9AF54D844CB9EAB5B96</string>
+				<string>44BDAC33F4FC4011B447CA91</string>
 			</array>
 			<key>isa</key>
 			<string>PBXGroup</string>
@@ -688,6 +758,8 @@
 		</dict>
 		<key>6562BCBA195D5F6C00CCE73D</key>
 		<dict>
+			<key>baseConfigurationReference</key>
+			<string>263ABADA4EF74F02A342A709</string>
 			<key>buildSettings</key>
 			<dict>
 				<key>DSTROOT</key>
@@ -710,6 +782,8 @@
 		</dict>
 		<key>6562BCBB195D5F6C00CCE73D</key>
 		<dict>
+			<key>baseConfigurationReference</key>
+			<string>263ABADA4EF74F02A342A709</string>
 			<key>buildSettings</key>
 			<dict>
 				<key>DSTROOT</key>
@@ -887,6 +961,30 @@
 			<string>libPods-ImageLoaderTests.a</string>
 			<key>sourceTree</key>
 			<string>BUILT_PRODUCTS_DIR</string>
+		</dict>
+		<key>946D27F3D87F41458F81C240</key>
+		<dict>
+			<key>buildActionMask</key>
+			<string>2147483647</string>
+			<key>files</key>
+			<array/>
+			<key>inputPaths</key>
+			<array/>
+			<key>isa</key>
+			<string>PBXShellScriptBuildPhase</string>
+			<key>name</key>
+			<string>Copy Pods Resources</string>
+			<key>outputPaths</key>
+			<array/>
+			<key>runOnlyForDeploymentPostprocessing</key>
+			<string>0</string>
+			<key>shellPath</key>
+			<string>/bin/sh</string>
+			<key>shellScript</key>
+			<string>"${SRCROOT}/Pods/Pods-resources.sh"
+</string>
+			<key>showEnvVarsInLog</key>
+			<string>0</string>
 		</dict>
 		<key>B21105EE7BCF4F56AFCDCEB8</key>
 		<dict>
