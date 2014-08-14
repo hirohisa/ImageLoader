@@ -71,13 +71,13 @@
     NSURL *URL;
 
     URL = [NSURL URLWithString:@"http://test/path"];
-    ImageLoaderOperation *operation1 = [loader getImageWithURL:URL];
+    ImageLoaderOperation *operation1 = [loader getImageWithURL:URL completion:nil];
 
     XCTAssertTrue([loader.operationQueue.operations count] == 1,
                   @"operationQueue.operations count is %d", [loader.operationQueue.operations count]);
 
     URL = [NSURL URLWithString:@"http://test/path2"];
-    ImageLoaderOperation *operation2 = [loader getImageWithURL:URL];
+    ImageLoaderOperation *operation2 = [loader getImageWithURL:URL completion:nil];
 
     id valid = @[operation1, operation2];
     XCTAssertTrue([loader.operationQueue.operations isEqualToArray:valid],
@@ -92,9 +92,9 @@
 
     URL = [NSURL URLWithString:@"http://test/path"];
 
-    ImageLoaderOperation *operation1 = [loader getImageWithURL:URL];
+    ImageLoaderOperation *operation1 = [loader getImageWithURL:URL completion:nil];
 
-    ImageLoaderOperation *operation2 = [loader getImageWithURL:URL];
+    ImageLoaderOperation *operation2 = [loader getImageWithURL:URL completion:nil];
 
     XCTAssertEqual(operation1,
                    operation2,
