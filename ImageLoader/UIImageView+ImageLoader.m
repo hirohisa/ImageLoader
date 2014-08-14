@@ -22,12 +22,6 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
     }
 }
 
-@interface ImageLoader ()
-
-+ (instancetype)il_sharedLoader;
-
-@end
-
 @interface UIImageView (ImageLoader_Property)
 
 @property (nonatomic, strong) NSURL *imageLoaderRequestURL;
@@ -61,7 +55,6 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 }
 
 @end
-
 
 @implementation UIImageView (ImageLoader)
 

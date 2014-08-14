@@ -7,7 +7,7 @@
 //
 
 #import "ImageLoader.h"
-
+#import "Diskcached.h"
 
 NSString *const ImageLoaderCacheNotConfirmToProtocolException = @"ImageLoaderDidCompletionNotification";
 
@@ -76,20 +76,20 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 // ImageLoaderCache
 //
 //
-@interface ImageLoaderCache : NSCache <ImageLoaderCacheProtocol>
+@interface ImageLoaderCache : Diskcached <ImageLoaderCacheProtocol>
 
 @end
 
 @implementation ImageLoaderCache
 
-+ (instancetype)il_sharedCache
+- (id)init
 {
-    static dispatch_once_t onceToken;
-    __strong static ImageLoaderCache *_singleton = nil;
-    dispatch_once(&onceToken, ^{
-        _singleton = [[self alloc] init];
-    });
-    return _singleton;
+    self = [super initAtPath:@"ImageLoader" inUserDomainDirectory:NSCachesDirectory];
+    if (self) {
+        self.useArchiver = NO;
+        self.keepData = NO;
+    }
+    return self;
 }
 
 @end
@@ -465,7 +465,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 - (void)il_configure
 {
     // cache
-    _cache = [ImageLoaderCache il_sharedCache];
+    _cache = [[ImageLoaderCache alloc] init];
     // operation queue
     self.operationQueue = [[NSOperationQueue alloc] init];
     self.operationQueue.maxConcurrentOperationCount = NSOperationQueueDefaultMaxConcurrentOperationCount;
