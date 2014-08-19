@@ -23,23 +23,6 @@
 
 @end
 
-// mock object
-@interface ImageLoaderTestCache : NSCache <ImageLoaderCacheProtocol>
-
-@end
-
-@implementation ImageLoaderTestCache
-
-@end
-
-@interface ImageLoaderNoCache : NSObject
-
-@end
-
-@implementation ImageLoaderNoCache
-
-@end
-
 
 @interface ImageLoaderTests : XCTestCase
 
@@ -74,7 +57,7 @@
     ImageLoaderOperation *operation1 = [loader getImageWithURL:URL completion:nil];
 
     XCTAssertTrue([loader.operationQueue.operations count] == 1,
-                  @"operationQueue.operations count is %d", [loader.operationQueue.operations count]);
+                  @"operationQueue.operations count is %lu", (unsigned long)[loader.operationQueue.operations count]);
 
     URL = [NSURL URLWithString:@"http://test/path2"];
     ImageLoaderOperation *operation2 = [loader getImageWithURL:URL completion:nil];

@@ -1,7 +1,8 @@
 language: objective-c
 
 before_install:
-  - gem install cocoapods -v '0.32.1'
+  - gem install cocoapods
 
 script:
+  - make pod
   - make test
