@@ -25,7 +25,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 @interface UIImageView (ImageLoader_Property)
 
 @property (nonatomic, strong) NSURL *imageLoaderRequestURL;
-@property (nonatomic, copy)  void (^completion)(BOOL);
+@property (nonatomic) NSUInteger completionHash;
 
 @end
 
@@ -44,33 +44,28 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
     objc_setAssociatedObject(self, ImageLoaderRequestURLKey, imageLoaderRequestURL, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (void (^)(BOOL))completion
+- (NSUInteger)completionHash
 {
-    return objc_getAssociatedObject(self, ImageLoaderCompletionKey);
+    NSNumber *completionHash = objc_getAssociatedObject(self, ImageLoaderCompletionKey);
+    if (completionHash) {
+        return [completionHash integerValue];
+    }
+    return 0;
 }
 
-- (void)setCompletion:(void (^)(BOOL))completion
+- (void)setCompletionHash:(NSUInteger)completionHash
 {
-    objc_setAssociatedObject(self, ImageLoaderCompletionKey, completion, OBJC_ASSOCIATION_COPY_NONATOMIC);
+    objc_setAssociatedObject(self, ImageLoaderCompletionKey, @(completionHash), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 @end
-
 @implementation UIImageView (ImageLoader)
 
 #pragma mark - swizzling
 
 + (void)load
 {
-    ILSwizzleInstanceMethod(self, @selector(setImage:), @selector(il_setImage:));
-}
-
-- (void)il_setImage:(UIImage *)image
-{
-    self.imageLoaderRequestURL = nil;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self il_setImage:image];
-    });
+//    ILSwizzleInstanceMethod(self, @selector(setImage:), @selector(il_setImage:));
 }
 
 #pragma mark - ImageLoader
@@ -95,11 +90,7 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 
 - (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL))completion
 {
-    if (self.completion) {
-        self.completion(NO);
-        self.completion = nil;
-    }
-
+    [self il_cancelCompletion];
     // cache exists
     NSData *data = [[[self class] il_sharedImageLoader].cache objectForKey:[URL absoluteString]];
     if (data) {
@@ -114,30 +105,32 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
     if (placeholderImage) {
         self.image = placeholderImage;
     }
-    // URL
-    self.imageLoaderRequestURL = URL;
 
-    // completion
-    if (completion) {
-        self.completion = completion;
-    }
 
     __weak typeof(self) wSelf = self;
+    ImageLoaderOperation *operation =
     [[[self class] il_sharedImageLoader] getImageWithURL:URL completion:^(NSURLRequest *request, UIImage *image) {
-        [wSelf il_setImage:image withURL:request.URL];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            wSelf.image = image;
+            completion(YES);
+        });
     }];
+    self.imageLoaderRequestURL = URL;
+    self.completionHash = [[operation.completionBlocks lastObject] hash];
 }
 
-- (void)il_setImage:(UIImage *)image withURL:(NSURL *)URL
+- (void)il_cancelCompletion
 {
-    BOOL equaled = [URL isEqual:self.imageLoaderRequestURL];
-    if (equaled) {
-        self.image = image;
+    if (!self.completionHash || !self.imageLoaderRequestURL) {
+        return;
     }
-    if (self.completion) {
-        self.completion(equaled);
-        self.completion = nil;
+
+    ImageLoaderOperation *operation = [[[self class] il_sharedImageLoader] getOperationWithURL:self.imageLoaderRequestURL];
+    if (!operation || [operation isFinished]) {
+        return;
     }
+
+    [operation removeCompletionBlockWithHash:self.completionHash];
 }
 
 @end

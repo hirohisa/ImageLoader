@@ -93,4 +93,57 @@
                     @"notCache confirms protocol");
 }
 
+- (void)testRemoveCompletionBlockWithIndex
+{
+    ImageLoader *loader = [ImageLoader loader];
+
+    NSURL *URL;
+
+    URL = [NSURL URLWithString:@"http://test/path"];
+
+    void(^completion)(NSURLRequest *, UIImage *) = ^(NSURLRequest *request, UIImage *image) {};
+
+    ImageLoaderOperation *operation = [loader getImageWithURL:URL completion:completion];
+    XCTAssertTrue([operation.completionBlocks count] == 1,
+                  @"operation block count is %lu", (unsigned long)[operation.completionBlocks count]);
+
+    [operation removeCompletionBlockWithIndex:0];
+
+    XCTAssertTrue([operation.completionBlocks count] == 0,
+                  @"operation block count is %lu", (unsigned long)[operation.completionBlocks count]);
+}
+
+- (void)testRemoveCompletionBlockWithHash
+{
+    ImageLoader *loader = [ImageLoader loader];
+
+    NSURL *URL;
+
+    URL = [NSURL URLWithString:@"http://test/path"];
+
+    void(^completion1)(NSURLRequest *, UIImage *) = ^(NSURLRequest *request, UIImage *image) {};
+    void(^completion2)(NSURLRequest *, UIImage *) = ^(NSURLRequest *request, UIImage *image) {};
+
+    NSInteger competion1Hash, competion2Hash;
+
+    ImageLoaderOperation *operation;
+
+    operation = [loader getImageWithURL:URL completion:completion1];
+    competion1Hash = [[operation.completionBlocks lastObject] hash];
+
+    operation = [loader getImageWithURL:URL completion:completion2];
+    competion2Hash = [[operation.completionBlocks lastObject] hash];
+
+    XCTAssertTrue([operation.completionBlocks count] == 2,
+                  @"operation block count is %lu", (unsigned long)[operation.completionBlocks count]);
+
+    [operation removeCompletionBlockWithHash:competion2Hash];
+
+    XCTAssertTrue([operation.completionBlocks count] == 1,
+                  @"operation block count is %lu", (unsigned long)[operation.completionBlocks count]);
+    XCTAssertTrue([[operation.completionBlocks lastObject] hash] == competion1Hash,
+                  @"operation remove block is fail");
+
+}
+
 @end

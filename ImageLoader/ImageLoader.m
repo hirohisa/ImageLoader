@@ -46,6 +46,35 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     }
 
     UIImage *image = [UIImage imageWithData:data];
+    if (CGImageGetWidth([image CGImage]) * CGImageGetHeight([image CGImage]) > 1024 * 1024 ||
+        CGImageGetBitsPerComponent([image CGImage]) > 8) {
+        return image;
+    }
+
+    CGBitmapInfo bitmapInfo = CGImageGetBitmapInfo([image CGImage]);
+
+    switch (CGColorSpaceGetModel(CGColorSpaceCreateDeviceRGB())) {
+        case kCGColorSpaceModelRGB: {
+            uint32_t alpha = bitmapInfo & kCGBitmapAlphaInfoMask;
+            CGImageAlphaInfo alphaInfo;
+
+            switch (alpha) {
+                case kCGImageAlphaNone:
+                    alphaInfo = kCGImageAlphaNoneSkipFirst;
+                    break;
+                default:
+                    alphaInfo = kCGImageAlphaPremultipliedFirst;
+                    break;
+            }
+
+            bitmapInfo &= ~kCGBitmapAlphaInfoMask;
+            bitmapInfo |= alphaInfo;
+        }
+            break;
+
+        default:
+            break;
+    }
 
     CGContextRef context = CGBitmapContextCreate(
                                                  NULL,
@@ -54,9 +83,8 @@ UIImage * ILOptimizedImageWithData(NSData *data)
                                                  CGImageGetBitsPerComponent([image CGImage]),
                                                  0,
                                                  CGColorSpaceCreateDeviceRGB(),
-                                                 CGImageGetBitmapInfo([image CGImage])
+                                                 bitmapInfo
                                                  );
-
 
     CGContextDrawImage(context, CGRectMake(.0f, .0f, CGImageGetWidth([image CGImage]), CGImageGetHeight([image CGImage])), [image CGImage]);
     CGImageRef optimizedImageRef = CGBitmapContextCreateImage(context);
@@ -94,6 +122,16 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 
 @end
 
+@interface ImageLoaderOperationCompletionBlock : NSObject
+
+@property (nonatomic, copy) void (^completionBlock)(NSURLRequest *, NSData *);
+
+@end
+
+@implementation ImageLoaderOperationCompletionBlock
+
+@end
+
 @interface ImageLoaderOperation () <NSURLConnectionDataDelegate>
 
 @property (nonatomic) ImageLoaderOperationState state;
@@ -103,9 +141,6 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 @property (nonatomic, strong) NSData *responseData;
 
 @property (nonatomic, strong) NSRecursiveLock *lock;
-@property (nonatomic, readonly) NSArray *completionBlocks;
-
-- (void)addCompletionBlock:(void (^)(NSURLRequest *, NSData *))block;
 
 @end
 
@@ -183,16 +218,15 @@ UIImage * ILOptimizedImageWithData(NSData *data)
         _state = ImageLoaderOperationReadyState;
         _lock = [[NSRecursiveLock alloc] init];
         _request = request;
+        _completionBlocks = @[];
         if (completion) {
-            _completionBlocks = @[completion];
-        } else {
-            _completionBlocks = @[];
+            [self addCompletionBlock:completion];
         }
 
         __weak typeof(self) wSelf = self;
         self.completionBlock = ^{
-            for (void(^completion)(NSURLRequest *, NSData *) in wSelf.completionBlocks) {
-                completion(wSelf.request, wSelf.responseData);
+            for (ImageLoaderOperationCompletionBlock *block in wSelf.completionBlocks) {
+                block.completionBlock(wSelf.request, wSelf.responseData);
             }
         };
     }
@@ -202,8 +236,34 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 - (void)addCompletionBlock:(void (^)(NSURLRequest *, NSData *))block
 {
     if (block) {
-        _completionBlocks = [self.completionBlocks arrayByAddingObject:block];
+        ImageLoaderOperationCompletionBlock *object = [[ImageLoaderOperationCompletionBlock alloc] init];
+        object.completionBlock = block;
+        _completionBlocks = [self.completionBlocks arrayByAddingObject:object];
     }
+}
+
+- (void)removeCompletionBlockWithIndex:(NSUInteger)index
+{
+    NSMutableArray *completionBlocks = [@[] mutableCopy];
+    for (int i=0; i < [self.completionBlocks count]; i++) {
+        if (i != index) {
+            [completionBlocks addObject:self.completionBlocks[i]];
+        }
+    }
+
+    _completionBlocks = [completionBlocks copy];
+}
+
+- (void)removeCompletionBlockWithHash:(NSUInteger)hash
+{
+    NSMutableArray *completionBlocks = [@[] mutableCopy];
+    for (ImageLoaderOperationCompletionBlock *block in self.completionBlocks) {
+        if (hash != block.hash) {
+            [completionBlocks addObject:block];
+        }
+    }
+
+    _completionBlocks = [completionBlocks copy];
 }
 
 #pragma mark - getter
@@ -496,6 +556,17 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     return [self _getImageWithURL:URL completion:completion];
 }
 
+- (ImageLoaderOperation *)getOperationWithURL:(NSURL *)URL
+{
+    for (ImageLoaderOperation *operation in self.operationQueue.operations) {
+        if (!operation.isFinished &&
+            [operation.request.URL isEqual:URL]) {
+            return operation;
+        }
+    }
+    return nil;
+}
+
 #pragma mark - private
 
 - (ImageLoaderOperation *)_getImageWithURL:(NSURL *)URL completion:(void (^)(NSURLRequest *, UIImage *))completion
@@ -525,12 +596,11 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     };
 
     // operation exists
-    for (ImageLoaderOperation *operation in self.operationQueue.operations) {
-        if (!operation.isFinished &&
-            [operation.request.URL isEqual:URL]) {
-            [operation addCompletionBlock:completionBlock];
-            return operation;
-        }
+    ImageLoaderOperation *operation;
+    operation = [self getOperationWithURL:URL];
+    if (operation) {
+        [operation addCompletionBlock:completionBlock];
+        return operation;
     }
 
     NSData *data = [self.cache objectForKey:[URL absoluteString]];
@@ -545,8 +615,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];
     [request addValue:@"image/*" forHTTPHeaderField:@"Accept"];
 
-    ImageLoaderOperation *operation =
-    [[ImageLoaderOperation alloc] initWithRequest:request completion:completionBlock];
+    operation = [[ImageLoaderOperation alloc] initWithRequest:request completion:completionBlock];
 
     [self enqueue:operation];
 

@@ -22,6 +22,12 @@ extern NSString *const ImageLoaderCacheNotConfirmToProtocolException;
 
 @interface ImageLoaderOperation : NSOperation
 
+@property (nonatomic, readonly) NSArray *completionBlocks;
+
+- (void)addCompletionBlock:(void (^)(NSURLRequest *, NSData *))block;
+- (void)removeCompletionBlockWithIndex:(NSUInteger)index;
+- (void)removeCompletionBlockWithHash:(NSUInteger)Hash;
+
 @end
 
 @interface ImageLoader : NSObject
@@ -31,5 +37,6 @@ extern NSString *const ImageLoaderCacheNotConfirmToProtocolException;
 + (instancetype)loader;
 
 - (ImageLoaderOperation *)getImageWithURL:(NSURL *)URL completion:(void (^)(NSURLRequest *request, UIImage *image))completion;
+- (ImageLoaderOperation *)getOperationWithURL:(NSURL *)URL;
 
 @end
