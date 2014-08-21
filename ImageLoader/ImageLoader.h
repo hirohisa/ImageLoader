@@ -26,7 +26,6 @@ extern NSString *const ImageLoaderCacheNotConfirmToProtocolException;
 
 - (void)addCompletionBlock:(void (^)(NSURLRequest *, NSData *))block;
 - (void)removeCompletionBlockWithIndex:(NSUInteger)index;
-- (void)removeCompletionBlockWithHash:(NSUInteger)Hash;
 
 @end
 

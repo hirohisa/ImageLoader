@@ -254,18 +254,6 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     _completionBlocks = [completionBlocks copy];
 }
 
-- (void)removeCompletionBlockWithHash:(NSUInteger)hash
-{
-    NSMutableArray *completionBlocks = [@[] mutableCopy];
-    for (ImageLoaderOperationCompletionBlock *block in self.completionBlocks) {
-        if (hash != block.hash) {
-            [completionBlocks addObject:block];
-        }
-    }
-
-    _completionBlocks = [completionBlocks copy];
-}
-
 #pragma mark - getter
 
 - (BOOL)isReady

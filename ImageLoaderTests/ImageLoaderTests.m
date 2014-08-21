@@ -9,6 +9,7 @@
 #import <XCTest/XCTest.h>
 #import <OHHTTPStubs/OHHTTPStubs.h>
 #import "ImageLoader.h"
+#import "UIImageView+ImageLoader.h"
 
 // private property
 @interface ImageLoader ()
@@ -20,6 +21,8 @@
 @interface ImageLoaderOperation ()
 
 @property (nonatomic, strong) id<ImageLoaderCacheProtocol> cache;
+
+- (void)removeCompletionBlockWithHash:(NSUInteger)Hash;
 
 @end
 

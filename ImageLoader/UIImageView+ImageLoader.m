@@ -22,6 +22,22 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
     }
 }
 
+@implementation ImageLoaderOperation (ImageLoader_Property)
+
+- (void)removeCompletionBlockWithHash:(NSUInteger)hash
+{
+    for (int i=0; i < [self.completionBlocks count]; i++) {
+        NSObject *block = self.completionBlocks[i];
+        if (hash == block.hash) {
+            [self removeCompletionBlockWithIndex:i];
+            break;
+        }
+    }
+}
+
+@end
+
+
 @interface UIImageView (ImageLoader_Property)
 
 @property (nonatomic, strong) NSURL *imageLoaderRequestURL;
@@ -59,6 +75,7 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 }
 
 @end
+
 @implementation UIImageView (ImageLoader)
 
 #pragma mark - swizzling
