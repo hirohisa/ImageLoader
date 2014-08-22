@@ -151,3 +151,22 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 }
 
 @end
+
+@implementation UIImageView (ImageLoader_Compatible)
+
+- (void)setImageWithURL:(NSURL *)URL
+{
+    [self il_setImageWithURL:URL placeholderImage:nil];
+}
+
+- (void)setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage
+{
+    [self il_setImageWithURL:URL placeholderImage:placeholderImage];
+}
+
+- (void)setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL finished))completion
+{
+    [self il_setImageWithURL:URL placeholderImage:placeholderImage completion:completion];
+}
+
+@end
