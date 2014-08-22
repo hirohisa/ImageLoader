@@ -10,8 +10,7 @@ Features
 - A module for cache can be set by yourself.
 - ~~An observer with NSNotification.~~
 - Loading images is handled by ImageLoader, not UIImageView.
-
-
+- Easy to modify implementation from other modules
 
 Installation
 ----------
@@ -23,33 +22,41 @@ There are two ways to use this in your project:
 - Install with CocoaPods to write Podfile
 ```ruby
 platform :ios
-pod 'ImageLoader', '~> 0.0.1'
+pod 'ImageLoader', '~> 0.1.1'
 ```
 
-Example with other modules
+Modify implementation from other modules
 ----------
 
-**ImageLoader**
-
+impliment same methods
 ```objc
-UIImageView *imageView = [UIImageView new];
-[imageView il_setImageWithURL:URL placeholderImage:nil];
-```
-
-**AFNetworking**
-
-```objc
-UIImageView *imageView = [UIImageView new];
+[imageView setImageWithURL:URL];
 [imageView setImageWithURL:URL placeholderImage:nil];
 ```
 
-**SDWebImage**
+#### AFNetworking
 
+from:
 ```objc
-UIImageView *imageView = [UIImageView new];
-[imageView sd_setImageWithURL:URL placeholderImage:nil completed:NULL];
+#import <SDWebImage/UIImageView+WebCache.h>
 ```
 
+to:
+```objc
+#import <ImageLoader/UIImageView+ImageLoader.h>
+```
+
+#### SDWebImage
+
+from:
+```objc
+#import <AFNetworking/UIImageView+AFNetworking.h>
+```
+
+to:
+```objc
+#import <ImageLoader/UIImageView+ImageLoader.h>
+```
 
 
 ## License
