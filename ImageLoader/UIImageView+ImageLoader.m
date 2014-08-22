@@ -11,17 +11,6 @@
 #import "UIImageView+ImageLoader.h"
 #import "ImageLoader.h"
 
-void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
-{
-    Method orgMethod = class_getInstanceMethod(c, original);
-    Method altMethod = class_getInstanceMethod(c, alternative);
-    if(class_addMethod(c, original, method_getImplementation(altMethod), method_getTypeEncoding(altMethod))) {
-        class_replaceMethod(c, alternative, method_getImplementation(orgMethod), method_getTypeEncoding(orgMethod));
-    } else {
-        method_exchangeImplementations(orgMethod, altMethod);
-    }
-}
-
 @implementation ImageLoaderOperation (ImageLoader_Property)
 
 - (void)removeCompletionBlockWithHash:(NSUInteger)hash
@@ -77,13 +66,6 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 @end
 
 @implementation UIImageView (ImageLoader)
-
-#pragma mark - swizzling
-
-+ (void)load
-{
-//    ILSwizzleInstanceMethod(self, @selector(setImage:), @selector(il_setImage:));
-}
 
 #pragma mark - ImageLoader
 
