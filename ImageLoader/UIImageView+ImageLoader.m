@@ -9,7 +9,6 @@
 #import <objc/runtime.h>
 
 #import "UIImageView+ImageLoader.h"
-#import "ImageLoader.h"
 
 @implementation ImageLoaderOperation (ImageLoader_Property)
 

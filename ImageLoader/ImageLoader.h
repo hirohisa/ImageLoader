@@ -32,6 +32,7 @@ extern NSString *const ImageLoaderCacheNotConfirmToProtocolException;
 @interface ImageLoader : NSObject
 
 @property (nonatomic, strong) id<ImageLoaderCacheProtocol> cache;
+@property (nonatomic) BOOL keepRequest; // default is NO. If you dont kill a reqest, cache image with it.
 
 + (instancetype)loader;
 

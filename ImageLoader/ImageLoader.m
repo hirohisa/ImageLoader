@@ -136,6 +136,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 
 @property (nonatomic) ImageLoaderOperationState state;
 @property (nonatomic, readonly, strong) NSURLRequest *request;
+@property (nonatomic, readonly) BOOL keepRequest;
 @property (nonatomic, strong) NSURLConnection *connection;
 @property (nonatomic, strong) NSOutputStream *outputStream;
 @property (nonatomic, strong) NSData *responseData;
@@ -147,7 +148,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 @interface ImageLoaderOperation (Private)
 
 - (NSString *)il_keyPathWithOperationState:(ImageLoaderOperationState)state;
-- (BOOL)il_canShiftToState:(ImageLoaderOperationState)toState;
+- (BOOL)il_canShiftFromState:(ImageLoaderOperationState)from ToState:(ImageLoaderOperationState)to;
 
 @end
 
@@ -165,19 +166,19 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     }
 }
 
-- (BOOL)il_canShiftToState:(ImageLoaderOperationState)toState
+- (BOOL)il_canShiftFromState:(ImageLoaderOperationState)from ToState:(ImageLoaderOperationState)to
 {
-    if (self.state == toState) {
+    if (from == to) {
         return NO;
     }
 
-    switch (self.state) {
+    switch (from) {
         case ImageLoaderOperationReadyState:;
             return YES;
             break;
 
         case ImageLoaderOperationExecutingState:;
-            return self.state < toState;
+            return from < to;
             break;
 
         case ImageLoaderOperationFinishedState:;
@@ -211,13 +212,14 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     }
 }
 
-- (id)initWithRequest:(NSURLRequest *)request completion:(void (^)(NSURLRequest *, NSData *))completion
+- (id)initWithRequest:(NSURLRequest *)request keepRequest:(BOOL)keepRequest completion:(void (^)(NSURLRequest *, NSData *))completion
 {
     self = [self init];
     if (self) {
         _state = ImageLoaderOperationReadyState;
         _lock = [[NSRecursiveLock alloc] init];
         _request = request;
+        _keepRequest = keepRequest;
         _completionBlocks = @[];
         if (completion) {
             [self addCompletionBlock:completion];
@@ -243,6 +245,15 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 }
 
 - (void)removeCompletionBlockWithIndex:(NSUInteger)index
+{
+    [self _removeCompletionBlockWithIndex:index];
+    if (![self.completionBlocks count] &&
+        !self.keepRequest) {
+        [self cancel];
+    }
+}
+
+- (void)_removeCompletionBlockWithIndex:(NSUInteger)index
 {
     NSMutableArray *completionBlocks = [@[] mutableCopy];
     for (int i=0; i < [self.completionBlocks count]; i++) {
@@ -280,7 +291,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 
 - (void)setState:(ImageLoaderOperationState)state
 {
-    if (![self il_canShiftToState:state]) {
+    if (![self il_canShiftFromState:self.state ToState:state]) {
         return;
     }
 
@@ -512,6 +523,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 
 - (void)il_configure
 {
+    self.keepRequest = NO;
     // cache
     _cache = [[ImageLoaderCache alloc] init];
     // operation queue
@@ -603,7 +615,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];
     [request addValue:@"image/*" forHTTPHeaderField:@"Accept"];
 
-    operation = [[ImageLoaderOperation alloc] initWithRequest:request completion:completionBlock];
+    operation = [[ImageLoaderOperation alloc] initWithRequest:request keepRequest:self.keepRequest completion:completionBlock];
 
     [self enqueue:operation];
 

@@ -7,8 +7,11 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "ImageLoader.h"
 
 @interface UIImageView (ImageLoader)
+
++ (ImageLoader *)il_sharedImageLoader;
 
 - (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage;
 - (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL finished))completion;
