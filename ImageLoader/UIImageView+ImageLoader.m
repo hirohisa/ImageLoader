@@ -29,7 +29,7 @@
 @interface UIImageView (ImageLoader_Property)
 
 @property (nonatomic, strong) NSURL *imageLoaderRequestURL;
-@property (nonatomic) NSUInteger completionHash;
+@property (nonatomic) NSUInteger imageLoaderCompletionKey;
 
 @end
 
@@ -48,18 +48,18 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
     objc_setAssociatedObject(self, ImageLoaderRequestURLKey, imageLoaderRequestURL, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (NSUInteger)completionHash
+- (NSUInteger)imageLoaderCompletionKey
 {
-    NSNumber *completionHash = objc_getAssociatedObject(self, ImageLoaderCompletionKey);
-    if (completionHash) {
-        return [completionHash integerValue];
+    NSNumber *imageLoaderCompletionKey = objc_getAssociatedObject(self, ImageLoaderCompletionKey);
+    if (imageLoaderCompletionKey) {
+        return [imageLoaderCompletionKey integerValue];
     }
     return 0;
 }
 
-- (void)setCompletionHash:(NSUInteger)completionHash
+- (void)setImageLoaderCompletionKey:(NSUInteger)imageLoaderCompletionKey
 {
-    objc_setAssociatedObject(self, ImageLoaderCompletionKey, @(completionHash), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(self, ImageLoaderCompletionKey, @(imageLoaderCompletionKey), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 @end
@@ -117,12 +117,12 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
     }];
 
     self.imageLoaderRequestURL = URL;
-    self.completionHash = [[operation.completionBlocks lastObject] hash];
+    self.imageLoaderCompletionKey = [[operation.completionBlocks lastObject] hash];
 }
 
 - (void)il_cancelCompletion
 {
-    if (!self.completionHash || !self.imageLoaderRequestURL) {
+    if (!self.imageLoaderCompletionKey || !self.imageLoaderRequestURL) {
         return;
     }
 
@@ -131,7 +131,7 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
         return;
     }
 
-    [operation removeCompletionBlockWithHash:self.completionHash];
+    [operation removeCompletionBlockWithHash:self.imageLoaderCompletionKey];
 }
 
 @end
