@@ -88,31 +88,34 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 
 - (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL))completion
 {
+    void(^setImageWithCompletionBlock)(UIImageView *, UIImage *) = ^(UIImageView *imageView, UIImage *image) {
+        imageView.image = image;
+        [imageView setNeedsLayout];
+        if (completion) {
+            completion(YES);
+        }
+    };
+
     [self il_cancelCompletion];
     // cache exists
     NSData *data = [[[self class] il_sharedImageLoader].cache objectForKey:[URL absoluteString]];
     if (data) {
-        self.image = ILOptimizedImageWithData(data);
-        if (completion) {
-            completion(YES);
-            return;
-        }
+        setImageWithCompletionBlock(self, ILOptimizedImageWithData(data));
+        return;
     }
 
     // place holder
     if (placeholderImage) {
         self.image = placeholderImage;
+        [self setNeedsLayout];
     }
-
 
     __weak typeof(self) wSelf = self;
     ImageLoaderOperation *operation =
     [[[self class] il_sharedImageLoader] getImageWithURL:URL completion:^(NSURLRequest *request, UIImage *image) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            wSelf.image = image;
-            completion(YES);
-        });
+        setImageWithCompletionBlock(wSelf, image);
     }];
+
     self.imageLoaderRequestURL = URL;
     self.completionHash = [[operation.completionBlocks lastObject] hash];
 }
