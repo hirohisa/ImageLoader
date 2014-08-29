@@ -129,7 +129,9 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
     [[[self class] il_sharedImageLoader] getImageWithURL:URL completion:^(NSURLRequest *request, UIImage *image) {
         dispatch_async(dispatch_get_main_queue(), ^{
             wSelf.image = image;
-            completion(YES);
+            if (completion) {
+                completion(YES);
+            }
         });
     }];
     self.imageLoaderRequestURL = URL;
