@@ -9,18 +9,6 @@
 #import <objc/runtime.h>
 
 #import "UIImageView+ImageLoader.h"
-#import "ImageLoader.h"
-
-void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
-{
-    Method orgMethod = class_getInstanceMethod(c, original);
-    Method altMethod = class_getInstanceMethod(c, alternative);
-    if(class_addMethod(c, original, method_getImplementation(altMethod), method_getTypeEncoding(altMethod))) {
-        class_replaceMethod(c, alternative, method_getImplementation(orgMethod), method_getTypeEncoding(orgMethod));
-    } else {
-        method_exchangeImplementations(orgMethod, altMethod);
-    }
-}
 
 @implementation ImageLoaderOperation (ImageLoader_Property)
 
@@ -41,7 +29,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 @interface UIImageView (ImageLoader_Property)
 
 @property (nonatomic, strong) NSURL *imageLoaderRequestURL;
-@property (nonatomic) NSUInteger completionHash;
+@property (nonatomic) NSUInteger imageLoaderCompletionKey;
 
 @end
 
@@ -60,30 +48,23 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
     objc_setAssociatedObject(self, ImageLoaderRequestURLKey, imageLoaderRequestURL, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (NSUInteger)completionHash
+- (NSUInteger)imageLoaderCompletionKey
 {
-    NSNumber *completionHash = objc_getAssociatedObject(self, ImageLoaderCompletionKey);
-    if (completionHash) {
-        return [completionHash integerValue];
+    NSNumber *imageLoaderCompletionKey = objc_getAssociatedObject(self, ImageLoaderCompletionKey);
+    if (imageLoaderCompletionKey) {
+        return [imageLoaderCompletionKey integerValue];
     }
     return 0;
 }
 
-- (void)setCompletionHash:(NSUInteger)completionHash
+- (void)setImageLoaderCompletionKey:(NSUInteger)imageLoaderCompletionKey
 {
-    objc_setAssociatedObject(self, ImageLoaderCompletionKey, @(completionHash), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(self, ImageLoaderCompletionKey, @(imageLoaderCompletionKey), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 @end
 
 @implementation UIImageView (ImageLoader)
-
-#pragma mark - swizzling
-
-+ (void)load
-{
-//    ILSwizzleInstanceMethod(self, @selector(setImage:), @selector(il_setImage:));
-}
 
 #pragma mark - ImageLoader
 
@@ -107,40 +88,41 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 
 - (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL))completion
 {
+    void(^setImageWithCompletionBlock)(UIImageView *, UIImage *) = ^(UIImageView *imageView, UIImage *image) {
+        imageView.image = image;
+        [imageView setNeedsLayout];
+        if (completion) {
+            completion(YES);
+        }
+    };
+
     [self il_cancelCompletion];
     // cache exists
     NSData *data = [[[self class] il_sharedImageLoader].cache objectForKey:[URL absoluteString]];
     if (data) {
-        self.image = ILOptimizedImageWithData(data);
-        if (completion) {
-            completion(YES);
-            return;
-        }
+        setImageWithCompletionBlock(self, ILOptimizedImageWithData(data));
+        return;
     }
 
     // place holder
     if (placeholderImage) {
         self.image = placeholderImage;
+        [self setNeedsLayout];
     }
-
 
     __weak typeof(self) wSelf = self;
     ImageLoaderOperation *operation =
     [[[self class] il_sharedImageLoader] getImageWithURL:URL completion:^(NSURLRequest *request, UIImage *image) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            wSelf.image = image;
-            if (completion) {
-                completion(YES);
-            }
-        });
+        setImageWithCompletionBlock(wSelf, image);
     }];
+
     self.imageLoaderRequestURL = URL;
-    self.completionHash = [[operation.completionBlocks lastObject] hash];
+    self.imageLoaderCompletionKey = [[operation.completionBlocks lastObject] hash];
 }
 
 - (void)il_cancelCompletion
 {
-    if (!self.completionHash || !self.imageLoaderRequestURL) {
+    if (!self.imageLoaderCompletionKey || !self.imageLoaderRequestURL) {
         return;
     }
 
@@ -149,7 +131,26 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
         return;
     }
 
-    [operation removeCompletionBlockWithHash:self.completionHash];
+    [operation removeCompletionBlockWithHash:self.imageLoaderCompletionKey];
+}
+
+@end
+
+@implementation UIImageView (ImageLoader_Compatible)
+
+- (void)setImageWithURL:(NSURL *)URL
+{
+    [self il_setImageWithURL:URL placeholderImage:nil];
+}
+
+- (void)setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage
+{
+    [self il_setImageWithURL:URL placeholderImage:placeholderImage];
+}
+
+- (void)setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL finished))completion
+{
+    [self il_setImageWithURL:URL placeholderImage:placeholderImage completion:completion];
 }
 
 @end

@@ -96,6 +96,65 @@
                     @"notCache confirms protocol");
 }
 
+- (void)testOperationCancel
+{
+    ImageLoader *loader = [ImageLoader loader];
+
+    NSURL *URL;
+
+    URL = [NSURL URLWithString:@"http://test/path"];
+
+    void(^completion)(NSURLRequest *, UIImage *) = ^(NSURLRequest *request, UIImage *image) {};
+
+    ImageLoaderOperation *operation = [loader getImageWithURL:URL completion:completion];
+    [operation cancel];
+    XCTAssertTrue([operation isCancelled],
+                  @"cant control to cancel to operation");
+}
+
+- (void)testKeepRequestNO
+{
+    ImageLoader *loader = [ImageLoader loader];
+
+    NSURL *URL;
+
+    URL = [NSURL URLWithString:@"http://test/path"];
+
+    void(^completion)(NSURLRequest *, UIImage *) = ^(NSURLRequest *request, UIImage *image) {};
+
+    ImageLoaderOperation *operation = [loader getImageWithURL:URL completion:completion];
+    XCTAssertTrue([operation.completionBlocks count] == 1,
+                  @"operation block count is %lu", (unsigned long)[operation.completionBlocks count]);
+
+    [operation removeCompletionBlockWithIndex:0];
+
+    XCTAssertTrue([operation isCancelled],
+                  @"cant control to cancel to operation");
+}
+
+- (void)testKeepRequestYES
+{
+    ImageLoader *loader = [ImageLoader loader];
+    loader.keepRequest = YES;
+
+    NSURL *URL;
+
+    URL = [NSURL URLWithString:@"http://test/path"];
+
+    void(^completion)(NSURLRequest *, UIImage *) = ^(NSURLRequest *request, UIImage *image) {};
+
+    ImageLoaderOperation *operation = [loader getImageWithURL:URL completion:completion];
+    XCTAssertTrue([operation.completionBlocks count] == 1,
+                  @"operation block count is %lu", (unsigned long)[operation.completionBlocks count]);
+
+    [operation removeCompletionBlockWithIndex:0];
+
+    XCTAssertTrue(![operation isCancelled],
+                  @"cant control to cancel to operation");
+    XCTAssertTrue(!operation.isFinished,
+                  @"operation is finished");
+}
+
 - (void)testRemoveCompletionBlockWithIndex
 {
     ImageLoader *loader = [ImageLoader loader];

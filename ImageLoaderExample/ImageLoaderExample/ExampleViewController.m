@@ -133,7 +133,7 @@
     }
 
     [cell.imageView il_setImageWithURL:URL placeholderImage:[UIImage imageWithColor:[UIColor grayColor]] completion:^(BOOL finished) {
-        NSLog(@"%d, finished %d", index, finished);
+        NSLog(@"%ld, finished %d", (long)index, finished);
     }];
 
     return cell;
