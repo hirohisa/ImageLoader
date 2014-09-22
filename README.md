@@ -1,7 +1,7 @@
 ImageLoader
 ===========
 
-ImageLoader is an instrument for asynchronous image loading.
+ImageLoader is a reusable instrument for asynchronous image loading and caching
 
 Features
 ----------
