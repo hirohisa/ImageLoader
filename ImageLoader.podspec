@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name         =  "ImageLoader"
-  s.version      =  "0.1.1"
+  s.version      =  "0.1.2"
   s.summary      =  "Library for async image loading"
   s.description  =  "Library for async image loading on iOS"
 
