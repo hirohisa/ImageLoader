@@ -608,8 +608,8 @@ UIImage * ILOptimizedImageWithData(NSData *data)
         UIImage *image = ILOptimizedImageWithData(data);
         if (completion) {
             completion(nil, image);
-            return nil;
         }
+        return nil;
     }
 
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];

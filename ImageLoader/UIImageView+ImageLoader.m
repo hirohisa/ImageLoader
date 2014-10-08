@@ -79,6 +79,17 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
     return _il_sharedImageLoader;
 }
 
++ (dispatch_queue_t)_ilQueue
+{
+    static dispatch_queue_t _ilQueue = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _ilQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0);
+    });
+
+    return _ilQueue;
+}
+
 #pragma mark - set Image with URL
 
 - (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage
@@ -88,36 +99,50 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 
 - (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL))completion
 {
-    void(^setImageWithCompletionBlock)(UIImageView *, UIImage *) = ^(UIImageView *imageView, UIImage *image) {
-        imageView.image = image;
-        [imageView setNeedsLayout];
-        if (completion) {
-            completion(YES);
+    __weak typeof(self) weakSelf = self;
+
+    void(^setImageWithCompletionBlock)(UIImage *) = ^(UIImage *image) {
+
+        if (!weakSelf) {
+            return;
         }
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            weakSelf.image = image;
+            if (completion) {
+                completion(YES);
+            }
+        });
     };
 
     [self il_cancelCompletion];
-    // cache exists
-    NSData *data = [[[self class] il_sharedImageLoader].cache objectForKey:[URL absoluteString]];
-    if (data) {
-        setImageWithCompletionBlock(self, ILOptimizedImageWithData(data));
-        return;
-    }
+    self.imageLoaderRequestURL = URL;
 
     // place holder
     if (placeholderImage) {
         self.image = placeholderImage;
-        [self setNeedsLayout];
     }
 
-    __weak typeof(self) wSelf = self;
-    ImageLoaderOperation *operation =
-    [[[self class] il_sharedImageLoader] getImageWithURL:URL completion:^(NSURLRequest *request, UIImage *image) {
-        setImageWithCompletionBlock(wSelf, image);
-    }];
+    dispatch_async([UIImageView _ilQueue], ^{
 
-    self.imageLoaderRequestURL = URL;
-    self.imageLoaderCompletionKey = [[operation.completionBlocks lastObject] hash];
+        if (!weakSelf) {
+            return;
+        }
+
+        NSData *data = [[[weakSelf class] il_sharedImageLoader].cache objectForKey:[URL absoluteString]];
+        if (data) {
+            setImageWithCompletionBlock(ILOptimizedImageWithData(data));
+            return;
+        }
+
+        ImageLoaderOperation *operation =
+        [[[weakSelf class] il_sharedImageLoader] getImageWithURL:URL completion:^(NSURLRequest *request, UIImage *image) {
+            setImageWithCompletionBlock(image);
+        }];
+
+        weakSelf.imageLoaderCompletionKey = [[operation.completionBlocks lastObject] hash];
+
+    });
 }
 
 - (void)il_cancelCompletion
