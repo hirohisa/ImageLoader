@@ -101,14 +101,17 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 {
     __weak typeof(self) weakSelf = self;
 
-    void(^setImageWithCompletionBlock)(UIImage *) = ^(UIImage *image) {
+    void(^setImageWithCompletionBlock)(NSURL *, UIImage *) = ^(NSURL *URL, UIImage *image) {
 
         if (!weakSelf) {
             return;
         }
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            weakSelf.image = image;
+            if ([weakSelf.imageLoaderRequestURL isEqual:URL]) {
+                weakSelf.image = image;
+            }
+
             if (completion) {
                 completion(YES);
             }
@@ -131,13 +134,13 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 
         NSData *data = [[[weakSelf class] il_sharedImageLoader].cache objectForKey:[URL absoluteString]];
         if (data) {
-            setImageWithCompletionBlock(ILOptimizedImageWithData(data));
+            setImageWithCompletionBlock(URL, ILOptimizedImageWithData(data));
             return;
         }
 
         ImageLoaderOperation *operation =
         [[[weakSelf class] il_sharedImageLoader] getImageWithURL:URL completion:^(NSURLRequest *request, UIImage *image) {
-            setImageWithCompletionBlock(image);
+            setImageWithCompletionBlock(request.URL, image);
         }];
 
         weakSelf.imageLoaderCompletionKey = [[operation.completionBlocks lastObject] hash];
