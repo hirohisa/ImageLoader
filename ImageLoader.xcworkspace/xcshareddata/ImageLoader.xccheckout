@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>9BC82581-F693-4F41-88D2-5F582EB5D5A8</string>
+	<key>IDESourceControlProjectName</key>
+	<string>ImageLoader</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>3F68B13F80F64DF78BE5950D62EBE58FB7573159</key>
+		<string>https://github.com/hirohisa/ImageLoader.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>ImageLoader.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>3F68B13F80F64DF78BE5950D62EBE58FB7573159</key>
+		<string>..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/hirohisa/ImageLoader.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>3F68B13F80F64DF78BE5950D62EBE58FB7573159</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>3F68B13F80F64DF78BE5950D62EBE58FB7573159</string>
+			<key>IDESourceControlWCCName</key>
+			<string>ImageLoader</string>
+		</dict>
+	</array>
+</dict>
+</plist>

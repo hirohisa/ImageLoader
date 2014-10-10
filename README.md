@@ -1,4 +1,4 @@
-ImageLoader
+ImageLoader [![Build Status](https://travis-ci.org/hirohisa/ImageLoader.png?branch=master)](https://travis-ci.org/hirohisa/ImageLoader)
 ===========
 
 ImageLoader is an instrument for asynchronous image loading.
