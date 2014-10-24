@@ -1,9 +1,9 @@
 Pod::Spec.new do |s|
 
   s.name         =  "ImageLoader"
-  s.version      =  "0.1.2"
-  s.summary      =  "Library for async image loading"
-  s.description  =  "Library for async image loading on iOS"
+  s.version      =  "0.1.3"
+  s.summary      =  "Library for asynchronous image loading."
+  s.description  =  "ImageLoader is an instrument for asynchronous image loading."
 
   s.homepage     =  "https://github.com/hirohisa/ImageLoader"
   s.license      =  { :type => "MIT", :file => "LICENSE" }
