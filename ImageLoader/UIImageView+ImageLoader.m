@@ -64,7 +64,32 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
 
 @end
 
+void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
+{
+    Method orgMethod = class_getInstanceMethod(c, original);
+    Method altMethod = class_getInstanceMethod(c, alternative);
+    if(class_addMethod(c, original, method_getImplementation(altMethod), method_getTypeEncoding(altMethod))) {
+        class_replaceMethod(c, alternative, method_getImplementation(orgMethod), method_getTypeEncoding(orgMethod));
+    } else {
+        method_exchangeImplementations(orgMethod, altMethod);
+    }
+}
+
 @implementation UIImageView (ImageLoader)
+
+#pragma mark - swizzling
+
++ (void)load
+{
+    ILSwizzleInstanceMethod(self, @selector(setImage:), @selector(il_setImage:));
+}
+
+- (void)il_setImage:(UIImage *)image
+{
+    self.imageLoaderRequestURL = nil;
+    self.imageLoaderCompletionKey = NSNotFound;
+    [self il_setImage:image];
+}
 
 #pragma mark - ImageLoader
 
@@ -119,12 +144,14 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
     };
 
     [self il_cancelCompletion];
-    self.imageLoaderRequestURL = URL;
 
     // place holder
     if (placeholderImage) {
         self.image = placeholderImage;
     }
+
+    // set request url after set placeholder image, caused by clearing request url on `setImage:`.
+    self.imageLoaderRequestURL = URL;
 
     dispatch_async([UIImageView _ilQueue], ^{
 
