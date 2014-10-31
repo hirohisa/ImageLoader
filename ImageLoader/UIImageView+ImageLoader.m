@@ -153,7 +153,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
     // set request url after set placeholder image, caused by clearing request url on `setImage:`.
     self.imageLoaderRequestURL = URL;
 
-    dispatch_async([UIImageView _ilQueue], ^{
+    void(^operationBlock)() = ^{
 
         if (!weakSelf) {
             return;
@@ -171,8 +171,16 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
         }];
 
         weakSelf.imageLoaderCompletionKey = [[operation.completionBlocks lastObject] hash];
+    };
 
-    });
+    [self il_enqueue:operationBlock];
+}
+
+- (void)il_enqueue:(void (^)())operationBlock
+{
+
+    dispatch_async([UIImageView _ilQueue], operationBlock);
+
 }
 
 - (void)il_cancelCompletion
