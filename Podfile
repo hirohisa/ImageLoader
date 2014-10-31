@@ -1,3 +1,4 @@
+source 'https://github.com/CocoaPods/Specs.git'
 platform :ios
 
 pod 'Diskcached', '~> 0.1.1'
