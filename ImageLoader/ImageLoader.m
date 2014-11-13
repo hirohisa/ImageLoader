@@ -216,6 +216,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 {
     self = [self init];
     if (self) {
+        self.name = [request.URL absoluteString];
         _state = ImageLoaderOperationReadyState;
         _lock = [[NSRecursiveLock alloc] init];
         _request = request;
@@ -351,7 +352,13 @@ UIImage * ILOptimizedImageWithData(NSData *data)
                             modes:@[NSDefaultRunLoopMode]];
         }
     }
-    [self finish];
+
+    self.connection = nil;
+
+    if (self.completionBlock) {
+        self.completionBlock();
+    }
+    _request = nil;
 
     [self.lock unlock];
 }
