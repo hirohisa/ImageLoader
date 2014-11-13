@@ -580,12 +580,10 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 
     __weak typeof(self) wSelf = self;
     void (^completionBlock)(NSURLRequest *, NSData *) = ^(NSURLRequest *request, NSData *data) {
-        UIImage *image;
+        UIImage *image = ILOptimizedImageWithData(data);
 
-        if (data) {
-            image = ILOptimizedImageWithData(data);
-            if (image &&
-                request.URL) {
+        if (image) {
+            if (image && request.URL) {
                 [wSelf.cache setObject:data forKey:[request.URL absoluteString]];
             }
         }
@@ -604,8 +602,8 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     }
 
     NSData *data = [self.cache objectForKey:[URL absoluteString]];
-    if (data) {
-        UIImage *image = ILOptimizedImageWithData(data);
+    UIImage *image = ILOptimizedImageWithData(data);
+    if (image) {
         if (completion) {
             completion(nil, image);
         }
