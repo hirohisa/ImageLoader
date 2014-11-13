@@ -109,7 +109,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
     static dispatch_queue_t _ilQueue = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _ilQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0);
+        _ilQueue = dispatch_queue_create("objc.imageloader.queue.requesting", DISPATCH_QUEUE_SERIAL);
     });
 
     return _ilQueue;
