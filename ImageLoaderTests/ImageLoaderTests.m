@@ -70,6 +70,19 @@
                   @"operationQueue doesnt have operations");
 }
 
+- (void)testConnectWithEmptyURL
+{
+    ImageLoader *loader = [ImageLoader loader];
+
+    NSURL *URL;
+
+    URL = nil;
+    [loader getImageWithURL:URL completion:nil];
+
+    XCTAssertTrue([loader.operationQueue.operations count] == 0,
+                  @"operationQueue.operations count is %lu", (unsigned long)[loader.operationQueue.operations count]);
+}
+
 - (void)testConnectWithSameURL
 {
     ImageLoader *loader = [ImageLoader loader];

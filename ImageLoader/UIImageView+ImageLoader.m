@@ -159,10 +159,15 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
             return;
         }
 
-        NSData *data = [[[weakSelf class] il_sharedImageLoader].cache objectForKey:[URL absoluteString]];
-        if (data) {
-            setImageWithCompletionBlock(URL, ILOptimizedImageWithData(data));
-            return;
+        if (weakSelf.imageLoaderRequestURL) {
+
+            NSString *URLString = [weakSelf.imageLoaderRequestURL absoluteString];
+            NSData *data = [[[weakSelf class] il_sharedImageLoader].cache objectForKey:URLString];
+            if (data) {
+                setImageWithCompletionBlock(URL, ILOptimizedImageWithData(data));
+                return;
+            }
+
         }
 
         ImageLoaderOperation *operation =
