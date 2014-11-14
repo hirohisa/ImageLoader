@@ -216,6 +216,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 {
     self = [self init];
     if (self) {
+        self.name = [request.URL absoluteString];
         _state = ImageLoaderOperationReadyState;
         _lock = [[NSRecursiveLock alloc] init];
         _request = request;
@@ -351,7 +352,13 @@ UIImage * ILOptimizedImageWithData(NSData *data)
                             modes:@[NSDefaultRunLoopMode]];
         }
     }
-    [self finish];
+
+    self.connection = nil;
+
+    if (self.completionBlock) {
+        self.completionBlock();
+    }
+    _request = nil;
 
     [self.lock unlock];
 }
@@ -580,12 +587,10 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 
     __weak typeof(self) wSelf = self;
     void (^completionBlock)(NSURLRequest *, NSData *) = ^(NSURLRequest *request, NSData *data) {
-        UIImage *image;
+        UIImage *image = ILOptimizedImageWithData(data);
 
-        if (data) {
-            image = ILOptimizedImageWithData(data);
-            if (image &&
-                request.URL) {
+        if (image) {
+            if (image && request.URL) {
                 [wSelf.cache setObject:data forKey:[request.URL absoluteString]];
             }
         }
@@ -604,8 +609,8 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     }
 
     NSData *data = [self.cache objectForKey:[URL absoluteString]];
-    if (data) {
-        UIImage *image = ILOptimizedImageWithData(data);
+    UIImage *image = ILOptimizedImageWithData(data);
+    if (image) {
         if (completion) {
             completion(nil, image);
         }

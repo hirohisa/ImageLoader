@@ -109,7 +109,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
     static dispatch_queue_t _ilQueue = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _ilQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0);
+        _ilQueue = dispatch_queue_create("objc.imageloader.queue.requesting", DISPATCH_QUEUE_SERIAL);
     });
 
     return _ilQueue;
@@ -153,16 +153,21 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
     // set request url after set placeholder image, caused by clearing request url on `setImage:`.
     self.imageLoaderRequestURL = URL;
 
-    dispatch_async([UIImageView _ilQueue], ^{
+    void(^operationBlock)() = ^{
 
         if (!weakSelf) {
             return;
         }
 
-        NSData *data = [[[weakSelf class] il_sharedImageLoader].cache objectForKey:[URL absoluteString]];
-        if (data) {
-            setImageWithCompletionBlock(URL, ILOptimizedImageWithData(data));
-            return;
+        if (weakSelf.imageLoaderRequestURL) {
+
+            NSString *URLString = [weakSelf.imageLoaderRequestURL absoluteString];
+            NSData *data = [[[weakSelf class] il_sharedImageLoader].cache objectForKey:URLString];
+            if (data) {
+                setImageWithCompletionBlock(URL, ILOptimizedImageWithData(data));
+                return;
+            }
+
         }
 
         ImageLoaderOperation *operation =
@@ -171,8 +176,16 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
         }];
 
         weakSelf.imageLoaderCompletionKey = [[operation.completionBlocks lastObject] hash];
+    };
 
-    });
+    [self il_enqueue:operationBlock];
+}
+
+- (void)il_enqueue:(void (^)())operationBlock
+{
+
+    dispatch_async([UIImageView _ilQueue], operationBlock);
+
 }
 
 - (void)il_cancelCompletion

@@ -69,31 +69,28 @@
 @end
 
 
+@interface NSURL (Example)
+
+@end
+
+@implementation NSURL (Example)
+
++ (instancetype)imageURLWithIndex:(NSInteger)index
+{
+    return [NSURL URLWithString:[NSString stringWithFormat:@"https://s3.amazonaws.com/fast-image-cache/demo-images/FICDDemoImage%03ld.jpg", (long)index]];
+}
+
+@end
+
 @interface ExampleViewController () <BrickViewDataSource, BrickViewDelegate>
 
 @end
 
 @implementation ExampleViewController
-{
-    NSArray *_URLs;
-}
 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-
-    _URLs = @[
-              [NSURL URLWithString:@"http://www.joomlaworks.net/images/demos/galleries/abstract/7.jpg"],
-              [NSURL URLWithString:@"http://www.picturesnew.com/media/images/image-background.jpg"],
-              [NSURL URLWithString:@"http://mcgovern.mit.edu/news/wp-content/uploads/2013/08/image7LR.jpg"],
-              [NSURL URLWithString:@"http://www.joomlaworks.net/images/demos/galleries/abstract/7.jpg"],
-              [NSURL URLWithString:@"http://www.picturesnew.com/media/images/image-background.jpg"],
-              [NSURL URLWithString:@"http://mcgovern.mit.edu/news/wp-content/uploads/2013/08/image7LR.jpg"],
-              [NSURL URLWithString:@"http://www.joomlaworks.net/images/demos/galleries/abstract/7.jpg"],
-              [NSURL URLWithString:@"http://www.picturesnew.com/media/images/image-background.jpg"],
-              [NSURL URLWithString:@"http://mcgovern.mit.edu/news/wp-content/uploads/2013/08/image7LR.jpg"],
-              [NSURL URLWithString:@"http://www.joomlaworks.net/images/demos/galleries/abstract/7.jpg"]
-              ];
 
     BrickView *brickView = [[BrickView alloc] initWithFrame:self.view.bounds];
     brickView.dataSource = self;
@@ -108,7 +105,7 @@
 
 - (NSInteger)numberOfCellsInBrickView:(BrickView *)brickView
 {
-    return 200;
+    return 100;
 }
 
 - (NSInteger)numberOfColumnsInBrickView:(BrickView *)brickView
@@ -123,12 +120,9 @@
         cell = [[ExampleBrickViewCell alloc] initWithReuseIdentifier:@"Cell"];
     }
 
-    NSURL *URL;
+    NSURL *URL = [NSURL imageURLWithIndex:index];
 
-    NSInteger i = index%[_URLs count];
-    URL = _URLs[i];
-
-    if (!i%10) {
+    if (!index%10) {
         URL = nil;
     }
 

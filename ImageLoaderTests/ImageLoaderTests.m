@@ -50,7 +50,7 @@
     [super tearDown];
 }
 
-- (void)testConnectWithURL
+- (void)testLoaderRunWithURL
 {
     ImageLoader *loader = [ImageLoader loader];
 
@@ -70,7 +70,20 @@
                   @"operationQueue doesnt have operations");
 }
 
-- (void)testConnectWithSameURL
+- (void)testLoaderRunWithEmptyURL
+{
+    ImageLoader *loader = [ImageLoader loader];
+
+    NSURL *URL;
+
+    URL = nil;
+    [loader getImageWithURL:URL completion:nil];
+
+    XCTAssertTrue([loader.operationQueue.operations count] == 0,
+                  @"operationQueue.operations count is %lu", (unsigned long)[loader.operationQueue.operations count]);
+}
+
+- (void)testLoaderRunWithSameURL
 {
     ImageLoader *loader = [ImageLoader loader];
 
@@ -155,7 +168,7 @@
                   @"operation is finished");
 }
 
-- (void)testRemoveCompletionBlockWithIndex
+- (void)testLoaderRemoveCompletionBlockWithIndex
 {
     ImageLoader *loader = [ImageLoader loader];
 
@@ -175,7 +188,7 @@
                   @"operation block count is %lu", (unsigned long)[operation.completionBlocks count]);
 }
 
-- (void)testRemoveCompletionBlockWithHash
+- (void)testLoaderRemoveCompletionBlockWithHash
 {
     ImageLoader *loader = [ImageLoader loader];
 
