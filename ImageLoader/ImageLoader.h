@@ -9,6 +9,8 @@
 @import Foundation;
 @import UIKit;
 
+#import "ImageLoaderOperation.h"
+
 extern UIImage * ILOptimizedImageWithData(NSData *data);
 
 extern NSString *const ImageLoaderCacheNotConfirmToProtocolException;
@@ -17,15 +19,6 @@ extern NSString *const ImageLoaderCacheNotConfirmToProtocolException;
 
 - (id)objectForKey:(id)key;
 - (void)setObject:(id)obj forKey:(id)key;
-
-@end
-
-@interface ImageLoaderOperation : NSOperation
-
-@property (nonatomic, readonly) NSArray *completionBlocks;
-
-- (void)addCompletionBlock:(void (^)(NSURLRequest *, NSData *))block;
-- (void)removeCompletionBlockWithIndex:(NSUInteger)index;
 
 @end
 
