@@ -86,7 +86,6 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 - (void)il_setImage:(UIImage *)image
 {
-    self.imageLoaderRequestURL = nil;
     self.imageLoaderCompletionKey = NSNotFound;
     [self il_setImage:image];
 }
@@ -133,7 +132,8 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
         }
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            if ([weakSelf.imageLoaderRequestURL isEqual:URL]) {
+            if (weakSelf.imageLoaderCompletionKey != NSNotFound &&
+                [weakSelf.imageLoaderRequestURL isEqual:URL]) {
                 weakSelf.image = image;
             }
 
@@ -190,7 +190,8 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 - (void)il_cancelCompletion
 {
-    if (!self.imageLoaderCompletionKey || !self.imageLoaderRequestURL) {
+    if (self.imageLoaderCompletionKey == NSNotFound ||
+        !self.imageLoaderRequestURL) {
         return;
     }
 

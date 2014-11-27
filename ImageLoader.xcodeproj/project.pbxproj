@@ -20,6 +20,8 @@
 		6562BCB6195D5F6C00CCE73D /* ImageLoaderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6562BCB5195D5F6C00CCE73D /* ImageLoaderTests.m */; };
 		6562BCC1195D610600CCE73D /* UIImageView+ImageLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 6562BCC0195D610600CCE73D /* UIImageView+ImageLoader.m */; };
 		65A348851A1C65B1007B42E0 /* ImageLoaderOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 65A348841A1C65B1007B42E0 /* ImageLoaderOperation.m */; };
+		65E562631A26DE780000CD50 /* UIImageViewTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 65E562621A26DE780000CD50 /* UIImageViewTests.m */; };
+		65E562711A26F3E80000CD50 /* black.png in Resources */ = {isa = PBXBuildFile; fileRef = 65E562701A26F3E80000CD50 /* black.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +66,8 @@
 		6562BCC0195D610600CCE73D /* UIImageView+ImageLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImageView+ImageLoader.m"; sourceTree = "<group>"; };
 		65A348831A1C65B1007B42E0 /* ImageLoaderOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImageLoaderOperation.h; sourceTree = "<group>"; };
 		65A348841A1C65B1007B42E0 /* ImageLoaderOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImageLoaderOperation.m; sourceTree = "<group>"; };
+		65E562621A26DE780000CD50 /* UIImageViewTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UIImageViewTests.m; sourceTree = "<group>"; };
+		65E562701A26F3E80000CD50 /* black.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = black.png; sourceTree = "<group>"; };
 		8FCAD9AF54D844CB9EAB5B96 /* libPods-ImageLoaderTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ImageLoaderTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AB8F7AC0474BF784587A96AC /* Pods-ImageLoaderTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ImageLoaderTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ImageLoaderTests/Pods-ImageLoaderTests.debug.xcconfig"; sourceTree = "<group>"; };
 		C6BD6FF4001A52FF0692E57C /* Pods.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = Pods.debug.xcconfig; path = "Pods/Target Support Files/Pods/Pods.debug.xcconfig"; sourceTree = "<group>"; };
@@ -163,6 +167,8 @@
 			isa = PBXGroup;
 			children = (
 				6562BCB5195D5F6C00CCE73D /* ImageLoaderTests.m */,
+				65E562621A26DE780000CD50 /* UIImageViewTests.m */,
+				65E562701A26F3E80000CD50 /* black.png */,
 				6562BCB0195D5F6C00CCE73D /* Supporting Files */,
 			);
 			path = ImageLoaderTests;
@@ -252,6 +258,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6562BCB4195D5F6C00CCE73D /* InfoPlist.strings in Resources */,
+				65E562711A26F3E80000CD50 /* black.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -335,6 +342,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				65E562631A26DE780000CD50 /* UIImageViewTests.m in Sources */,
 				6562BCB6195D5F6C00CCE73D /* ImageLoaderTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
