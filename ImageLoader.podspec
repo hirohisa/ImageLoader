@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name         =  "ImageLoader"
-  s.version      =  "0.1.4"
+  s.version      =  "0.1.5"
   s.summary      =  "Library for asynchronous image loading."
   s.description  =  "ImageLoader is an instrument for asynchronous image loading."
 
