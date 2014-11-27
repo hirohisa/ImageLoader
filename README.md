@@ -6,11 +6,10 @@ ImageLoader is an instrument for asynchronous image loading.
 Features
 ----------
 
-- Simple methods with UIImageView Category.
-- A module for cache can be set by yourself.
-- ~~An observer with NSNotification.~~
-- Loading images is handled by ImageLoader, not UIImageView.
-- Easy to modify implementation from other modules
+- [x] Simple methods with UIImageView Category.
+- [x] A module for cache can be set by yourself. [hirohisa/Diskcached](https://github.com/hirohisa/Diskcached)
+- [x] Loading images is handled by ImageLoader, not UIImageView.
+- [x] Easy to modify implementation from other modules
 
 Installation
 ----------
