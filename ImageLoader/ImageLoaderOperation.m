@@ -107,7 +107,6 @@ typedef NS_ENUM(NSUInteger, ImageLoaderOperationState) {
 {
     self = [self init];
     if (self) {
-        self.name = [request.URL absoluteString];
         _state = ImageLoaderOperationReadyState;
         _lock = [[NSRecursiveLock alloc] init];
         _request = request;
