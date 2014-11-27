@@ -9,7 +9,6 @@
 #import <XCTest/XCTest.h>
 #import <OHHTTPStubs/OHHTTPStubs.h>
 #import "ImageLoader.h"
-#import "UIImageView+ImageLoader.h"
 
 // private property
 @interface ImageLoader ()
@@ -97,7 +96,7 @@
 
     XCTAssertEqual(operation1,
                    operation2,
-                   @"operations call same URL");
+                   @"operations dont call same URL");
 }
 
 - (void)testCacheDoesntConfirmProtocol
