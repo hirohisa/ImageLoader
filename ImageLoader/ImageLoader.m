@@ -177,6 +177,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 {
     for (ImageLoaderOperation *operation in self.operationQueue.operations) {
         if (!operation.isFinished &&
+            !operation.isCancelled &&
             [operation.request.URL isEqual:URL]) {
             return operation;
         }

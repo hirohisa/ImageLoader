@@ -47,7 +47,8 @@
 
 @interface UIImageViewTests : XCTestCase
 
-@property (nonatomic, strong) UIImage *image;
+@property (nonatomic, strong) UIImage *blackImage;
+@property (nonatomic, strong) UIImage *whiteImage;
 
 @end
 
@@ -57,15 +58,30 @@
 {
     [super setUp];
 
-    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:@"black" ofType:@"png"];
+    NSString *path;
+    NSData *blackImageData, *whiteImageData;
 
-    NSData *data = UIImageJPEGRepresentation([UIImage imageWithContentsOfFile:path], 1.f);
-    self.image = ILOptimizedImageWithData(data);
+    path = [[NSBundle bundleForClass:[self class]] pathForResource:@"black" ofType:@"png"];
+    blackImageData = UIImageJPEGRepresentation([UIImage imageWithContentsOfFile:path], 1.f);
+    self.blackImage = ILOptimizedImageWithData(blackImageData);
+
+    path = [[NSBundle bundleForClass:[self class]] pathForResource:@"white" ofType:@"png"];
+    whiteImageData = UIImageJPEGRepresentation([UIImage imageWithContentsOfFile:path], 1.f);
+    self.whiteImage = ILOptimizedImageWithData(whiteImageData);
 
     [OHHTTPStubs shouldStubRequestsPassingTest:^BOOL(NSURLRequest *request) {
         return YES;
     } withStubResponse:^OHHTTPStubsResponse *(NSURLRequest *request) {
-        return [OHHTTPStubsResponse responseWithData:data
+
+        NSURL *URL = request.URL;
+
+        if ([URL.path hasSuffix:@"white"]) {
+            return [OHHTTPStubsResponse responseWithData:whiteImageData
+                                              statusCode:200
+                                            responseTime:.1 headers:nil];
+        }
+
+        return [OHHTTPStubsResponse responseWithData:blackImageData
                                           statusCode:200
                                         responseTime:.1 headers:nil];
     }];
@@ -74,25 +90,6 @@
 - (void)tearDown
 {
     [super tearDown];
-}
-
-- (void)testHasSameURLOnLoadingCompletion
-{
-    NSURL *URL;
-    URL = [NSURL URLWithString:@"http://test/path"];
-
-    UIImageView *imageView = [UIImageView new];
-
-    __weak typeof(imageView) weakImageView = imageView;
-    [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
-
-        XCTAssertEqual(URL,
-                       weakImageView.imageLoaderRequestURL,
-                       @"URL is not same");
-
-    }];
-
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.5]];
 }
 
 // requirements for testing `testThenUIImageViewCompletionAfterLoad`
@@ -106,7 +103,7 @@
     __weak typeof(imageView) weakImageView = imageView;
     [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
 
-        XCTAssertTrue([weakImageView.image isEqualToImage:self.image],
+        XCTAssertTrue([weakImageView.image isEqualToImage:self.blackImage],
                        @"They are not same data");
 
     }];
@@ -118,23 +115,92 @@
 {
     NSURL *URL;
     UIImage *image;
-    URL = [NSURL URLWithString:@"http://test/path"];
-    image = [UIImage imageWithData:[NSData data]];
+    URL = [NSURL URLWithString:@"http://test/path2"];
+
+    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:@"white" ofType:@"png"];
+    NSData *data = UIImageJPEGRepresentation([UIImage imageWithContentsOfFile:path], 1.f);
+    image = ILOptimizedImageWithData(data);
 
     UIImageView *imageView = [UIImageView new];
 
     __weak typeof(imageView) weakImageView = imageView;
     [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
 
-
-        XCTAssertFalse([weakImageView.image isEqualToImage:self.image],
-                      @"They are same data");
+        XCTAssertTrue([weakImageView.image isEqualToImage:image],
+                      @"They are not same data");
 
     }];
 
     imageView.image = image;
+    XCTAssertTrue([imageView.image isEqualToImage:image],
+                  @"They are not same data");
 
     [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.5]];
 }
 
+- (void)testLoadImageWithTwiceCalling
+{
+    NSURL *URL;
+    UIImage *image;
+
+    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:@"white" ofType:@"png"];
+    NSData *data = UIImageJPEGRepresentation([UIImage imageWithContentsOfFile:path], 1.f);
+    image = ILOptimizedImageWithData(data);
+
+    UIImageView *imageView = [UIImageView new];
+
+    __weak typeof(imageView) weakImageView = imageView;
+
+    URL = [NSURL URLWithString:@"http://test/white"];
+    [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
+
+        // not call
+        XCTAssertFalse(true,
+                       @"dont call block");
+
+    }];
+
+    URL = [NSURL URLWithString:@"http://test/black"];
+    [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
+
+        XCTAssertTrue([weakImageView.image isEqualToImage:self.blackImage],
+                      @"They are not same data");
+
+    }];
+
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.5]];
+}
+
+- (void)testLoadImageWithTwiceCalling2
+{
+    NSURL *whiteImageURL, *blackImageURL;
+    whiteImageURL = [NSURL URLWithString:@"http://test/twice/white"];
+    blackImageURL = [NSURL URLWithString:@"http://test/twice/black"];
+
+
+    UIImageView *imageView = [UIImageView new];
+
+    __weak typeof(imageView) weakImageView = imageView;
+    [imageView setImageWithURL:whiteImageURL placeholderImage:nil completion:^(BOOL finished) {
+
+        [weakImageView setImageWithURL:blackImageURL placeholderImage:nil completion:^(BOOL finished) {
+
+            // not call
+            XCTAssertFalse(true,
+                           @"dont call block");
+
+        }];
+
+        [weakImageView setImageWithURL:whiteImageURL placeholderImage:nil completion:^(BOOL finished) {
+
+            XCTAssertTrue([weakImageView.image isEqualToImage:self.whiteImage],
+                          @"They are not same data");
+
+        }];
+
+    }];
+
+
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.5]];
+}
 @end
