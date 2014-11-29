@@ -14,6 +14,7 @@
 
 - (void)removeCompletionBlockWithHash:(NSUInteger)hash
 {
+    NSLog(@"%lu, %@", (unsigned long)hash, self.completionBlocks);
     for (int i=0; i < [self.completionBlocks count]; i++) {
         NSObject *block = self.completionBlocks[i];
         if (hash == block.hash) {
@@ -86,7 +87,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 - (void)il_setImage:(UIImage *)image
 {
-    self.imageLoaderCompletionKey = NSNotFound;
+    self.imageLoaderRequestURL = nil;
     [self il_setImage:image];
 }
 
@@ -132,8 +133,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
         }
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (weakSelf.imageLoaderCompletionKey != NSNotFound &&
-                [weakSelf.imageLoaderRequestURL isEqual:URL]) {
+            if ([weakSelf.imageLoaderRequestURL isEqual:URL]) {
                 weakSelf.image = image;
             }
 
@@ -143,7 +143,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
         });
     };
 
-    [self il_cancelCompletion];
+    [self il_cancelCompletionWithURL:URL hash:self.imageLoaderCompletionKey];
 
     // place holder
     if (placeholderImage) {
@@ -175,7 +175,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
             setImageWithCompletionBlock(request.URL, image);
         }];
 
-        weakSelf.imageLoaderCompletionKey = [[operation.completionBlocks lastObject] hash];
+        self.imageLoaderCompletionKey = [[operation.completionBlocks lastObject] hash];
     };
 
     [self il_enqueue:operationBlock];
@@ -190,13 +190,18 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 - (void)il_cancelCompletion
 {
-    if (self.imageLoaderCompletionKey == NSNotFound ||
-        !self.imageLoaderRequestURL) {
-        return;
-    }
+    [self il_cancelCompletionWithURL:self.imageLoaderRequestURL hash:self.imageLoaderCompletionKey];
+}
+
+- (void)il_cancelCompletionWithURL:(NSURL *)URL hash:(NSUInteger)hash
+{
+    NSLog(@"%s", __func__);
+    NSLog(@"%lu", (unsigned long)hash);
+    NSLog(@"%@", URL);
 
     ImageLoaderOperation *operation = [[[self class] il_sharedImageLoader] getOperationWithURL:self.imageLoaderRequestURL];
-    if (!operation || [operation isFinished]) {
+    NSLog(@"%@", operation);
+    if (!operation) {
         return;
     }
 

@@ -45,8 +45,10 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     }
 
     CGBitmapInfo bitmapInfo = CGImageGetBitmapInfo([image CGImage]);
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    CGColorSpaceModel colorSpaceModel = CGColorSpaceGetModel(colorSpace);
 
-    switch (CGColorSpaceGetModel(CGColorSpaceCreateDeviceRGB())) {
+    switch (colorSpaceModel) {
         case kCGColorSpaceModelRGB: {
             uint32_t alpha = bitmapInfo & kCGBitmapAlphaInfoMask;
             CGImageAlphaInfo alphaInfo;
@@ -75,9 +77,10 @@ UIImage * ILOptimizedImageWithData(NSData *data)
                                                  CGImageGetHeight([image CGImage]),
                                                  CGImageGetBitsPerComponent([image CGImage]),
                                                  0,
-                                                 CGColorSpaceCreateDeviceRGB(),
+                                                 colorSpace,
                                                  bitmapInfo
                                                  );
+    CGColorSpaceRelease(colorSpace);
 
     CGContextDrawImage(context, CGRectMake(.0f, .0f, CGImageGetWidth([image CGImage]), CGImageGetHeight([image CGImage])), [image CGImage]);
     CGImageRef optimizedImageRef = CGBitmapContextCreateImage(context);
@@ -177,6 +180,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
 {
     for (ImageLoaderOperation *operation in self.operationQueue.operations) {
         if (!operation.isFinished &&
+            !operation.isCancelled &&
             [operation.request.URL isEqual:URL]) {
             return operation;
         }

@@ -122,10 +122,6 @@
 
     NSURL *URL = [NSURL imageURLWithIndex:index];
 
-    if (!index%10) {
-        URL = nil;
-    }
-
     [cell.imageView il_setImageWithURL:URL placeholderImage:[UIImage imageWithColor:[UIColor grayColor]] completion:^(BOOL finished) {
         NSLog(@"%ld, finished %d", (long)index, finished);
     }];
