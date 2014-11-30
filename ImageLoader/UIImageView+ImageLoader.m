@@ -14,7 +14,6 @@
 
 - (void)removeCompletionBlockWithHash:(NSUInteger)hash
 {
-    NSLog(@"%lu, %@", (unsigned long)hash, self.completionBlocks);
     for (int i=0; i < [self.completionBlocks count]; i++) {
         NSObject *block = self.completionBlocks[i];
         if (hash == block.hash) {
@@ -195,12 +194,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 - (void)il_cancelCompletionWithURL:(NSURL *)URL hash:(NSUInteger)hash
 {
-    NSLog(@"%s", __func__);
-    NSLog(@"%lu", (unsigned long)hash);
-    NSLog(@"%@", URL);
-
     ImageLoaderOperation *operation = [[[self class] il_sharedImageLoader] getOperationWithURL:self.imageLoaderRequestURL];
-    NSLog(@"%@", operation);
     if (!operation) {
         return;
     }
