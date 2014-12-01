@@ -130,7 +130,7 @@ typedef NS_ENUM(NSUInteger, ImageLoaderOperationState) {
 {
     if (block) {
         ImageLoaderOperationCompletionBlock *object = [[ImageLoaderOperationCompletionBlock alloc] init];
-        object.completionBlock = block;
+        object.completionBlock = [block copy];
         _completionBlocks = [self.completionBlocks arrayByAddingObject:object];
     }
 }

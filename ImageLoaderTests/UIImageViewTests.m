@@ -85,10 +85,12 @@
                                           statusCode:200
                                         responseTime:.1 headers:nil];
     }];
+
 }
 
 - (void)tearDown
 {
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
     [super tearDown];
 }
 
@@ -108,7 +110,6 @@
 
     }];
 
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.5]];
 }
 
 - (void)testSetImageToImageViewSoonAfterLoad
@@ -134,8 +135,6 @@
     imageView.image = image;
     XCTAssertTrue([imageView.image isEqualToImage:image],
                   @"They are not same data");
-
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.5]];
 }
 
 - (void)testLoadImageWithTwiceCalling
@@ -152,11 +151,11 @@
     __weak typeof(imageView) weakImageView = imageView;
 
     URL = [NSURL URLWithString:@"http://test/white"];
+
     [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
 
-        // not call
         XCTAssertFalse(true,
-                       @"dont call block");
+                       @"need to not call block");
 
     }];
 
@@ -167,8 +166,6 @@
                       @"They are not same data");
 
     }];
-
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.5]];
 }
 
 - (void)testLoadImageWithTwiceCalling2
@@ -185,9 +182,8 @@
 
         [weakImageView setImageWithURL:blackImageURL placeholderImage:nil completion:^(BOOL finished) {
 
-            // not call
             XCTAssertFalse(true,
-                           @"dont call block");
+                           @"need to not call block");
 
         }];
 
@@ -199,8 +195,5 @@
         }];
 
     }];
-
-
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.5]];
 }
 @end
