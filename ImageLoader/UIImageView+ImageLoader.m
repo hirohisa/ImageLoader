@@ -123,6 +123,16 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 - (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL))completion
 {
+    [self il_cancelCompletionWithURL:URL hash:self.imageLoaderCompletionKey];
+
+    // place holder
+    if (placeholderImage) {
+        self.image = placeholderImage;
+    }
+
+    // set request url after set placeholder image, caused by clearing request url on `setImage:`.
+    self.imageLoaderRequestURL = URL;
+
     __weak typeof(self) weakSelf = self;
 
     void(^setImageWithCompletionBlock)(NSURL *, UIImage *) = ^(NSURL *URL, UIImage *image) {
@@ -142,31 +152,21 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
         });
     };
 
-    [self il_cancelCompletionWithURL:URL hash:self.imageLoaderCompletionKey];
+    if (self.imageLoaderRequestURL) {
 
-    // place holder
-    if (placeholderImage) {
-        self.image = placeholderImage;
+        NSString *URLString = [self.imageLoaderRequestURL absoluteString];
+        NSData *data = [[[self class] il_sharedImageLoader].cache objectForKey:URLString];
+        if (data) {
+            setImageWithCompletionBlock(URL, ILOptimizedImageWithData(data));
+            return;
+        }
+
     }
-
-    // set request url after set placeholder image, caused by clearing request url on `setImage:`.
-    self.imageLoaderRequestURL = URL;
 
     void(^operationBlock)() = ^{
 
         if (!weakSelf) {
             return;
-        }
-
-        if (weakSelf.imageLoaderRequestURL) {
-
-            NSString *URLString = [weakSelf.imageLoaderRequestURL absoluteString];
-            NSData *data = [[[weakSelf class] il_sharedImageLoader].cache objectForKey:URLString];
-            if (data) {
-                setImageWithCompletionBlock(URL, ILOptimizedImageWithData(data));
-                return;
-            }
-
         }
 
         ImageLoaderOperation *operation =

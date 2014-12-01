@@ -215,8 +215,7 @@ UIImage * ILOptimizedImageWithData(NSData *data)
     };
 
     // operation exists
-    ImageLoaderOperation *operation;
-    operation = [self getOperationWithURL:URL];
+    ImageLoaderOperation *operation = [self getOperationWithURL:URL];
     if (operation) {
         [operation addCompletionBlock:completionBlock];
         return operation;
