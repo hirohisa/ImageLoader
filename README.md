@@ -1,6 +1,8 @@
 ImageLoader [![Build Status](https://travis-ci.org/hirohisa/ImageLoader.png?branch=master)](https://travis-ci.org/hirohisa/ImageLoader)
 ===========
 
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/hirohisa/ImageLoader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ImageLoader is an instrument for asynchronous image loading.
 
 Features
