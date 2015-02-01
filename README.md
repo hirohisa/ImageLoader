@@ -1,4 +1,4 @@
-ImageLoader [![Build Status](https://travis-ci.org/hirohisa/ImageLoader.png?branch=master)](https://travis-ci.org/hirohisa/ImageLoader)
+ImageLoader [![Build-Status](https://img.shields.io/travis/hirohisa/ImageLoader.svg)](https://travis-ci.org/hirohisa/ImageLoader.png?branch=master) [![GitHub-version](https://img.shields.io/cocoapods/v/ImageLoader.svg)](https://github.com/hirohisa/ImageLoader/tags) [![platform](https://img.shields.io/cocoapods/p/ImageLoader.svg)](https://github.com/hirohisa/ImageLoader) [![license](https://img.shields.io/cocoapods/l/ImageLoader.svg)](https://github.com/hirohisa/ImageLoader/blob/master/LICENSE)
 ===========
 
 ImageLoader is an instrument for asynchronous image loading.
@@ -61,4 +61,3 @@ to:
 ## License
 
 ImageLoader is available under the MIT license.
-
