@@ -22,6 +22,7 @@
 @property (nonatomic, strong) id<ImageLoaderCacheProtocol> cache;
 
 - (void)removeCompletionBlockWithHash:(NSUInteger)Hash;
+- (BOOL)il_canShiftFromState:(ImageLoaderOperationState)from ToState:(ImageLoaderOperationState)to;
 
 @end
 
@@ -218,6 +219,78 @@
     XCTAssertTrue([[operation.completionBlocks lastObject] hash] == competion1Hash,
                   @"operation remove block is fail");
 
+}
+
+- (void)testCanShiftFromStateToState
+{
+    ImageLoaderOperation *operation = [[ImageLoaderOperation alloc] init];
+    BOOL result;
+    BOOL valid;
+    ImageLoaderOperationState from;
+    ImageLoaderOperationState to;
+
+    from = ImageLoaderOperationReadyState;
+    to = ImageLoaderOperationReadyState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = NO;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationReadyState;
+    to = ImageLoaderOperationExecutingState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = YES;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationReadyState;
+    to = ImageLoaderOperationFinishedState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = YES;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationExecutingState;
+    to = ImageLoaderOperationReadyState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = NO;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationExecutingState;
+    to = ImageLoaderOperationExecutingState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = NO;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationExecutingState;
+    to = ImageLoaderOperationFinishedState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = YES;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationFinishedState;
+    to = ImageLoaderOperationReadyState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = NO;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationFinishedState;
+    to = ImageLoaderOperationExecutingState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = NO;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationFinishedState;
+    to = ImageLoaderOperationFinishedState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = NO;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
 }
 
 @end

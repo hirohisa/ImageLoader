@@ -8,8 +8,15 @@
 
 #import <Foundation/Foundation.h>
 
+typedef NS_ENUM(NSUInteger, ImageLoaderOperationState) {
+    ImageLoaderOperationReadyState = 0,
+    ImageLoaderOperationExecutingState = 1,
+    ImageLoaderOperationFinishedState = 2,
+};
+
 @interface ImageLoaderOperation : NSOperation
 
+@property (nonatomic, readonly) ImageLoaderOperationState state;
 @property (nonatomic, readonly) NSURLRequest *request;
 @property (nonatomic, readonly) NSArray *completionBlocks;
 

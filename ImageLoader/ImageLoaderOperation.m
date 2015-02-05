@@ -8,12 +8,6 @@
 
 #import "ImageLoaderOperation.h"
 
-typedef NS_ENUM(NSUInteger, ImageLoaderOperationState) {
-    ImageLoaderOperationReadyState = 0,
-    ImageLoaderOperationExecutingState = 1,
-    ImageLoaderOperationFinishedState = 2,
-};
-
 @interface ImageLoaderOperationCompletionBlock : NSObject
 
 @property (nonatomic, copy) void (^completionBlock)(NSURLRequest *, NSData *);
