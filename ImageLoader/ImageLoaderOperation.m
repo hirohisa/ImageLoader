@@ -150,12 +150,10 @@
 
 - (void)_removeCompletionBlockWithIndex:(NSUInteger)index
 {
-    if (index >= self.completionBlocks.count) {
-        return;
+    if (index < self.completionBlocks.count) {
+        ImageLoaderOperationCompletionBlock *block = self.completionBlocks[index];
+        block.completionBlock = nil;
     }
-
-    ImageLoaderOperationCompletionBlock *block = self.completionBlocks[index];
-    block.completionBlock = nil;
 }
 
 #pragma mark - getter
