@@ -9,6 +9,12 @@
 #import <XCTest/XCTest.h>
 #import <OHHTTPStubs/OHHTTPStubs.h>
 #import "ImageLoader.h"
+#import <Diskcached/Diskcached.h>
+
+// private class
+@interface ImageLoaderCache : Diskcached <ImageLoaderCacheProtocol>
+
+@end
 
 // private property
 @interface ImageLoader ()
@@ -151,6 +157,15 @@
     NSObject *notCache = [[NSObject alloc] init];
     XCTAssertThrows(loader.cache = (id<ImageLoaderCacheProtocol>)notCache,
                     @"notCache confirms protocol");
+}
+
+- (void)testCacheConfirmsProtocol
+{
+    ImageLoader *loader = [ImageLoader loader];
+
+    ImageLoaderCache *cache = [[ImageLoaderCache alloc] init];
+    XCTAssertTrue(loader.cache = cache,
+                  @"Diskcached dosent confirm protocol");
 }
 
 - (void)testOperationCancel
