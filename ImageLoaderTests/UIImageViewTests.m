@@ -10,6 +10,7 @@
 #import <XCTest/XCTest.h>
 #import <OHHTTPStubs/OHHTTPStubs.h>
 #import "UIImageView+ImageLoader.h"
+#import <Diskcached/Diskcached.h>
 
 #pragma mark - private methods
 
@@ -86,15 +87,15 @@
                                         responseTime:.1 headers:nil];
     }];
 
+    Diskcached *diskcached = (Diskcached *)[UIImageView il_sharedImageLoader].cache;
+    [diskcached removeAllObjects];
 }
 
 - (void)tearDown
 {
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
     [super tearDown];
 }
 
-// requirements for testing `testThenUIImageViewCompletionAfterLoad`
 - (void)testLoadSameDataWithOHHTTPStubs
 {
     NSURL *URL;
@@ -104,12 +105,10 @@
 
     __weak typeof(imageView) weakImageView = imageView;
     [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
-
         XCTAssertTrue([weakImageView.image isEqualToImage:self.blackImage],
-                       @"They are not same data");
-
+                      @"They are not same data");
     }];
-
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
 }
 
 - (void)testSetImageToImageViewSoonAfterLoad
@@ -126,18 +125,39 @@
 
     __weak typeof(imageView) weakImageView = imageView;
     [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
-
         XCTAssertTrue([weakImageView.image isEqualToImage:image],
                       @"They are not same data");
-
     }];
 
     imageView.image = image;
     XCTAssertTrue([imageView.image isEqualToImage:image],
                   @"They are not same data");
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
 }
 
 - (void)testLoadImageWithTwiceCalling
+{
+    NSURL *URL;
+    UIImage *image;
+
+    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:@"white" ofType:@"png"];
+    NSData *data = UIImageJPEGRepresentation([UIImage imageWithContentsOfFile:path], 1.f);
+    image = ILOptimizedImageWithData(data);
+
+    UIImageView *imageView = [UIImageView new];
+
+    URL = [NSURL URLWithString:@"http://test/first"];
+    [imageView setImageWithURL:URL];
+
+    URL = [NSURL URLWithString:@"http://test/second"];
+    [imageView setImageWithURL:URL];
+
+    XCTAssertEqual(URL, imageView.imageLoaderRequestURL,
+                   @"requesting URLs are not same, %@ and %@", URL, imageView.imageLoaderRequestURL);
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
+}
+
+- (void)testLoadImageWithTwiceCallingWithCompletion
 {
     NSURL *URL;
     UIImage *image;
@@ -153,27 +173,25 @@
     URL = [NSURL URLWithString:@"http://test/white"];
 
     [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
-
         XCTAssertFalse(true,
                        @"need to not call block");
-
     }];
+
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.001]]; // waiting for async task [self il_enqueue:operationBlock];
 
     URL = [NSURL URLWithString:@"http://test/black"];
     [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
-
         XCTAssertTrue([weakImageView.image isEqualToImage:self.blackImage],
                       @"They are not same data");
-
     }];
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
 }
 
-- (void)testLoadImageWithTwiceCalling2
+- (void)testLoadImageWithTwiceCallingInBlock
 {
     NSURL *whiteImageURL, *blackImageURL;
     whiteImageURL = [NSURL URLWithString:@"http://test/twice/white"];
     blackImageURL = [NSURL URLWithString:@"http://test/twice/black"];
-
 
     UIImageView *imageView = [UIImageView new];
 
@@ -181,19 +199,17 @@
     [imageView setImageWithURL:whiteImageURL placeholderImage:nil completion:^(BOOL finished) {
 
         [weakImageView setImageWithURL:blackImageURL placeholderImage:nil completion:^(BOOL finished) {
-
             XCTAssertFalse(true,
                            @"need to not call block");
-
         }];
+
+        [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.001]]; // waiting for async task [self il_enqueue:operationBlock];
 
         [weakImageView setImageWithURL:whiteImageURL placeholderImage:nil completion:^(BOOL finished) {
-
             XCTAssertTrue([weakImageView.image isEqualToImage:self.whiteImage],
                           @"They are not same data");
-
         }];
-
     }];
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
 }
 @end

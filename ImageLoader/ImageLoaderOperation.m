@@ -8,12 +8,6 @@
 
 #import "ImageLoaderOperation.h"
 
-typedef NS_ENUM(NSUInteger, ImageLoaderOperationState) {
-    ImageLoaderOperationReadyState = 0,
-    ImageLoaderOperationExecutingState = 1,
-    ImageLoaderOperationFinishedState = 2,
-};
-
 @interface ImageLoaderOperationCompletionBlock : NSObject
 
 @property (nonatomic, copy) void (^completionBlock)(NSURLRequest *, NSData *);
@@ -119,7 +113,9 @@ typedef NS_ENUM(NSUInteger, ImageLoaderOperationState) {
         __weak typeof(self) wSelf = self;
         self.completionBlock = ^{
             for (ImageLoaderOperationCompletionBlock *block in wSelf.completionBlocks) {
-                block.completionBlock(wSelf.request, wSelf.responseData);
+                if (block.completionBlock) {
+                    block.completionBlock(wSelf.request, wSelf.responseData);
+                }
             }
         };
     }
@@ -138,7 +134,15 @@ typedef NS_ENUM(NSUInteger, ImageLoaderOperationState) {
 - (void)removeCompletionBlockWithIndex:(NSUInteger)index
 {
     [self _removeCompletionBlockWithIndex:index];
-    if (![self.completionBlocks count] &&
+
+    BOOL hasCompletionBlock = NO;
+    for (ImageLoaderOperationCompletionBlock *block in self.completionBlocks) {
+        if (block.completionBlock) {
+            hasCompletionBlock = YES;
+            break;
+        }
+    }
+    if (!hasCompletionBlock &&
         !self.keepRequest) {
         [self cancel];
     }
@@ -146,14 +150,10 @@ typedef NS_ENUM(NSUInteger, ImageLoaderOperationState) {
 
 - (void)_removeCompletionBlockWithIndex:(NSUInteger)index
 {
-    NSMutableArray *completionBlocks = [@[] mutableCopy];
-    for (int i=0; i < [self.completionBlocks count]; i++) {
-        if (i != index) {
-            [completionBlocks addObject:self.completionBlocks[i]];
-        }
+    if (index < self.completionBlocks.count) {
+        ImageLoaderOperationCompletionBlock *block = self.completionBlocks[index];
+        block.completionBlock = nil;
     }
-
-    _completionBlocks = [completionBlocks copy];
 }
 
 #pragma mark - getter

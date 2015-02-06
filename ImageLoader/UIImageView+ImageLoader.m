@@ -10,33 +10,17 @@
 
 #import "UIImageView+ImageLoader.h"
 
-@implementation ImageLoaderOperation (ImageLoader_Property)
-
-- (void)removeCompletionBlockWithHash:(NSUInteger)hash
-{
-    for (int i=0; i < [self.completionBlocks count]; i++) {
-        NSObject *block = self.completionBlocks[i];
-        if (hash == block.hash) {
-            [self removeCompletionBlockWithIndex:i];
-            break;
-        }
-    }
-}
-
-@end
-
-
 @interface UIImageView (ImageLoader_Property)
 
 @property (nonatomic, strong) NSURL *imageLoaderRequestURL;
-@property (nonatomic) NSUInteger imageLoaderCompletionKey;
+@property (nonatomic, strong) NSNumber *imageLoaderCompletionBlockIndex;
 
 @end
 
 @implementation UIImageView (ImageLoader_Property)
 
 static const char *ImageLoaderRequestURLKey = "ImageLoaderRequestURLKey";
-static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
+static const char *ImageLoaderCompletionBlockIndexKey = "imageLoaderCompletionBlockIndex";
 
 - (NSURL *)imageLoaderRequestURL
 {
@@ -48,18 +32,20 @@ static const char *ImageLoaderCompletionKey = "ImageLoaderCompletionKey";
     objc_setAssociatedObject(self, ImageLoaderRequestURLKey, imageLoaderRequestURL, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (NSUInteger)imageLoaderCompletionKey
+- (NSNumber *)imageLoaderCompletionBlockIndex
 {
-    NSNumber *imageLoaderCompletionKey = objc_getAssociatedObject(self, ImageLoaderCompletionKey);
-    if (imageLoaderCompletionKey) {
-        return [imageLoaderCompletionKey integerValue];
+    NSNumber *imageLoaderCompletionBlockIndex = objc_getAssociatedObject(self, ImageLoaderCompletionBlockIndexKey);
+
+    if (imageLoaderCompletionBlockIndex) {
+        return imageLoaderCompletionBlockIndex;
     }
-    return 0;
+    return nil;
 }
 
-- (void)setImageLoaderCompletionKey:(NSUInteger)imageLoaderCompletionKey
+- (void)setImageLoaderCompletionBlockIndex:(NSNumber *)imageLoaderCompletionBlockIndex
 {
-    objc_setAssociatedObject(self, ImageLoaderCompletionKey, @(imageLoaderCompletionKey), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    NSLog(@"%s %@", __func__, imageLoaderCompletionBlockIndex);
+    objc_setAssociatedObject(self, ImageLoaderCompletionBlockIndexKey, imageLoaderCompletionBlockIndex, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 @end
@@ -68,11 +54,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 {
     Method orgMethod = class_getInstanceMethod(c, original);
     Method altMethod = class_getInstanceMethod(c, alternative);
-    if(class_addMethod(c, original, method_getImplementation(altMethod), method_getTypeEncoding(altMethod))) {
-        class_replaceMethod(c, alternative, method_getImplementation(orgMethod), method_getTypeEncoding(orgMethod));
-    } else {
-        method_exchangeImplementations(orgMethod, altMethod);
-    }
+    method_exchangeImplementations(orgMethod, altMethod);
 }
 
 @implementation UIImageView (ImageLoader)
@@ -105,13 +87,13 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 + (dispatch_queue_t)_ilQueue
 {
-    static dispatch_queue_t _ilQueue = nil;
+    static dispatch_queue_t _queue = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _ilQueue = dispatch_queue_create("objc.imageloader.queue.requesting", DISPATCH_QUEUE_SERIAL);
+        _queue = dispatch_queue_create("objc.imageloader.queue.requesting", DISPATCH_QUEUE_SERIAL);
     });
 
-    return _ilQueue;
+    return _queue;
 }
 
 #pragma mark - set Image with URL
@@ -123,7 +105,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 - (void)il_setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL))completion
 {
-    [self il_cancelCompletionWithURL:URL hash:self.imageLoaderCompletionKey];
+    [self il_removeCompletion];
 
     // place holder
     if (placeholderImage) {
@@ -174,7 +156,7 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
             setImageWithCompletionBlock(request.URL, image);
         }];
 
-        self.imageLoaderCompletionKey = [[operation.completionBlocks lastObject] hash];
+        self.imageLoaderCompletionBlockIndex = @([operation.completionBlocks count] -1);
     };
 
     [self il_enqueue:operationBlock];
@@ -182,24 +164,21 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 - (void)il_enqueue:(void (^)())operationBlock
 {
-
     dispatch_async([UIImageView _ilQueue], operationBlock);
-
 }
 
-- (void)il_cancelCompletion
+// remove block, if loader.keepRequest is no and blocks is empty then cancel loading
+- (void)il_removeCompletion
 {
-    [self il_cancelCompletionWithURL:self.imageLoaderRequestURL hash:self.imageLoaderCompletionKey];
-}
-
-- (void)il_cancelCompletionWithURL:(NSURL *)URL hash:(NSUInteger)hash
-{
+    if (!self.imageLoaderCompletionBlockIndex || !self.imageLoaderRequestURL) {
+        return;
+    }
     ImageLoaderOperation *operation = [[[self class] il_sharedImageLoader] getOperationWithURL:self.imageLoaderRequestURL];
     if (!operation) {
         return;
     }
 
-    [operation removeCompletionBlockWithHash:self.imageLoaderCompletionKey];
+    [operation removeCompletionBlockWithIndex:[self.imageLoaderCompletionBlockIndex unsignedIntegerValue]];
 }
 
 @end

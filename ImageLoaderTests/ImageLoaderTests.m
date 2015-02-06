@@ -9,6 +9,12 @@
 #import <XCTest/XCTest.h>
 #import <OHHTTPStubs/OHHTTPStubs.h>
 #import "ImageLoader.h"
+#import <Diskcached/Diskcached.h>
+
+// private class
+@interface ImageLoaderCache : Diskcached <ImageLoaderCacheProtocol>
+
+@end
 
 // private property
 @interface ImageLoader ()
@@ -21,10 +27,15 @@
 
 @property (nonatomic, strong) id<ImageLoaderCacheProtocol> cache;
 
-- (void)removeCompletionBlockWithHash:(NSUInteger)Hash;
+- (BOOL)il_canShiftFromState:(ImageLoaderOperationState)from ToState:(ImageLoaderOperationState)to;
 
 @end
 
+@interface ImageLoaderOperationCompletionBlock : NSObject
+
+@property (nonatomic, copy) void (^completionBlock)(NSURLRequest *, NSData *);
+
+@end
 
 @interface ImageLoaderTests : XCTestCase
 
@@ -38,6 +49,16 @@
     [OHHTTPStubs shouldStubRequestsPassingTest:^BOOL(NSURLRequest *request) {
         return YES;
     } withStubResponse:^OHHTTPStubsResponse *(NSURLRequest *request) {
+        if ([request.URL.path isEqualToString:@"timeout"]) {
+            return [OHHTTPStubsResponse responseWithData:nil
+                                              statusCode:[request.URL.path intValue]
+                                            responseTime:31. headers:nil];
+        }
+        if (400 < [request.URL.path intValue] && [request.URL.path intValue] < 500) {
+            return [OHHTTPStubsResponse responseWithData:nil
+                                              statusCode:[request.URL.path intValue]
+                                            responseTime:1. headers:nil];
+        }
         return [OHHTTPStubsResponse responseWithData:nil
                                           statusCode:200
                                         responseTime:1. headers:nil];
@@ -67,6 +88,36 @@
     id valid = @[operation1, operation2];
     XCTAssertTrue([loader.operationQueue.operations isEqualToArray:valid],
                   @"operationQueue doesnt have operations");
+}
+
+- (void)testLoaderRunWith404
+{
+    ImageLoader *loader = [ImageLoader loader];
+
+    NSURL *URL;
+
+    URL = [NSURL URLWithString:@"http://test/404"];
+    [loader getImageWithURL:URL completion:^(NSURLRequest *request, UIImage *image) {
+        XCTAssertTrue(!image,
+                      @"image exist!");
+    }];
+
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
+}
+
+- (void)testLoaderRunWithTimeout
+{
+    ImageLoader *loader = [ImageLoader loader];
+
+    NSURL *URL;
+
+    URL = [NSURL URLWithString:@"http://test/timeout"];
+    [loader getImageWithURL:URL completion:^(NSURLRequest *request, UIImage *image) {
+        XCTAssertTrue(!image,
+                      @"image exist!");
+    }];
+
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:32.]];
 }
 
 - (void)testLoaderRunWithEmptyURL
@@ -106,6 +157,15 @@
     NSObject *notCache = [[NSObject alloc] init];
     XCTAssertThrows(loader.cache = (id<ImageLoaderCacheProtocol>)notCache,
                     @"notCache confirms protocol");
+}
+
+- (void)testCacheConfirmsProtocol
+{
+    ImageLoader *loader = [ImageLoader loader];
+
+    ImageLoaderCache *cache = [[ImageLoaderCache alloc] init];
+    XCTAssertTrue(loader.cache = cache,
+                  @"Diskcached dosent confirm protocol");
 }
 
 - (void)testOperationCancel
@@ -175,49 +235,98 @@
 
     URL = [NSURL URLWithString:@"http://test/path"];
 
-    void(^completion)(NSURLRequest *, UIImage *) = ^(NSURLRequest *request, UIImage *image) {};
-
-    ImageLoaderOperation *operation = [loader getImageWithURL:URL completion:completion];
-    XCTAssertTrue([operation.completionBlocks count] == 1,
-                  @"operation block count is %lu", (unsigned long)[operation.completionBlocks count]);
-
-    [operation removeCompletionBlockWithIndex:0];
-
-    XCTAssertTrue([operation.completionBlocks count] == 0,
-                  @"operation block count is %lu", (unsigned long)[operation.completionBlocks count]);
-}
-
-- (void)testLoaderRemoveCompletionBlockWithHash
-{
-    ImageLoader *loader = [ImageLoader loader];
-
-    NSURL *URL;
-
-    URL = [NSURL URLWithString:@"http://test/path"];
-
     void(^completion1)(NSURLRequest *, UIImage *) = ^(NSURLRequest *request, UIImage *image) {};
     void(^completion2)(NSURLRequest *, UIImage *) = ^(NSURLRequest *request, UIImage *image) {};
-
-    NSInteger competion1Hash, competion2Hash;
 
     ImageLoaderOperation *operation;
 
     operation = [loader getImageWithURL:URL completion:completion1];
-    competion1Hash = [[operation.completionBlocks lastObject] hash];
-
     operation = [loader getImageWithURL:URL completion:completion2];
-    competion2Hash = [[operation.completionBlocks lastObject] hash];
 
     XCTAssertTrue([operation.completionBlocks count] == 2,
                   @"operation block count is %lu", (unsigned long)[operation.completionBlocks count]);
 
-    [operation removeCompletionBlockWithHash:competion2Hash];
+    [operation removeCompletionBlockWithIndex:1];
 
-    XCTAssertTrue([operation.completionBlocks count] == 1,
+    XCTAssertTrue([operation.completionBlocks count] == 2,
                   @"operation block count is %lu", (unsigned long)[operation.completionBlocks count]);
-    XCTAssertTrue([[operation.completionBlocks lastObject] hash] == competion1Hash,
-                  @"operation remove block is fail");
 
+    ImageLoaderOperationCompletionBlock *block = operation.completionBlocks[1];
+    XCTAssertNil(block.completionBlock,
+                 @"block has completion block");
+
+}
+
+- (void)testCanShiftFromStateToState
+{
+    ImageLoaderOperation *operation = [[ImageLoaderOperation alloc] init];
+    BOOL result;
+    BOOL valid;
+    ImageLoaderOperationState from;
+    ImageLoaderOperationState to;
+
+    from = ImageLoaderOperationReadyState;
+    to = ImageLoaderOperationReadyState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = NO;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationReadyState;
+    to = ImageLoaderOperationExecutingState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = YES;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationReadyState;
+    to = ImageLoaderOperationFinishedState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = YES;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationExecutingState;
+    to = ImageLoaderOperationReadyState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = NO;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationExecutingState;
+    to = ImageLoaderOperationExecutingState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = NO;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationExecutingState;
+    to = ImageLoaderOperationFinishedState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = YES;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationFinishedState;
+    to = ImageLoaderOperationReadyState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = NO;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationFinishedState;
+    to = ImageLoaderOperationExecutingState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = NO;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
+
+    from = ImageLoaderOperationFinishedState;
+    to = ImageLoaderOperationFinishedState;
+    result = [operation il_canShiftFromState:from ToState:to];
+    valid = NO;
+    XCTAssertTrue(result == valid,
+                  @"fail to shift from %lu to %lu", from, to);
 }
 
 @end
