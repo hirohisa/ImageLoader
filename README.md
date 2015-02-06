@@ -1,7 +1,7 @@
 ImageLoader [![Build-Status](https://img.shields.io/travis/hirohisa/ImageLoader/master.svg)](https://travis-ci.org/hirohisa/ImageLoader.png?branch=master) [![GitHub-version](https://img.shields.io/cocoapods/v/ImageLoader.svg)](https://github.com/hirohisa/ImageLoader/tags) [![platform](https://img.shields.io/cocoapods/p/ImageLoader.svg)](https://github.com/hirohisa/ImageLoader) [![license](https://img.shields.io/cocoapods/l/ImageLoader.svg)](https://github.com/hirohisa/ImageLoader/blob/master/LICENSE) [![Test-Coverage](https://img.shields.io/coveralls/hirohisa/ImageLoader/master.svg)](https://coveralls.io/r/hirohisa/ImageLoader)
 ===========
 
-ImageLoader is an instrument for asynchronous image loading.
+ImageLoader is an instrument for asynchronous image loading. It is a lightweight and fast image loader for iOS.
 
 Features
 ----------
