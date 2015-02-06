@@ -177,6 +177,8 @@
                        @"need to not call block");
     }];
 
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.001]]; // waiting for async task [self il_enqueue:operationBlock];
+
     URL = [NSURL URLWithString:@"http://test/black"];
     [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
         XCTAssertTrue([weakImageView.image isEqualToImage:self.blackImage],
@@ -200,6 +202,8 @@
             XCTAssertFalse(true,
                            @"need to not call block");
         }];
+
+        [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.001]]; // waiting for async task [self il_enqueue:operationBlock];
 
         [weakImageView setImageWithURL:whiteImageURL placeholderImage:nil completion:^(BOOL finished) {
             XCTAssertTrue([weakImageView.image isEqualToImage:self.whiteImage],
