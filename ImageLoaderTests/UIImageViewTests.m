@@ -10,6 +10,7 @@
 #import <XCTest/XCTest.h>
 #import <OHHTTPStubs/OHHTTPStubs.h>
 #import "UIImageView+ImageLoader.h"
+#import <Diskcached/Diskcached.h>
 
 #pragma mark - private methods
 
@@ -86,15 +87,15 @@
                                         responseTime:.1 headers:nil];
     }];
 
+    Diskcached *diskcached = (Diskcached *)[UIImageView il_sharedImageLoader].cache;
+    [diskcached removeAllObjects];
 }
 
 - (void)tearDown
 {
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
     [super tearDown];
 }
 
-// requirements for testing `testThenUIImageViewCompletionAfterLoad`
 - (void)testLoadSameDataWithOHHTTPStubs
 {
     NSURL *URL;
@@ -104,12 +105,10 @@
 
     __weak typeof(imageView) weakImageView = imageView;
     [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
-
         XCTAssertTrue([weakImageView.image isEqualToImage:self.blackImage],
-                       @"They are not same data");
-
+                      @"They are not same data");
     }];
-
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
 }
 
 - (void)testSetImageToImageViewSoonAfterLoad
@@ -126,15 +125,14 @@
 
     __weak typeof(imageView) weakImageView = imageView;
     [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
-
         XCTAssertTrue([weakImageView.image isEqualToImage:image],
                       @"They are not same data");
-
     }];
 
     imageView.image = image;
     XCTAssertTrue([imageView.image isEqualToImage:image],
                   @"They are not same data");
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
 }
 
 - (void)testLoadImageWithTwiceCalling
@@ -149,16 +147,14 @@
     UIImageView *imageView = [UIImageView new];
 
     URL = [NSURL URLWithString:@"http://test/first"];
-
-    [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
-
-        XCTAssertFalse(true,
-                       @"need to not call block");
-
-    }];
+    [imageView setImageWithURL:URL];
 
     URL = [NSURL URLWithString:@"http://test/second"];
     [imageView setImageWithURL:URL];
+
+    XCTAssertEqual(URL, imageView.imageLoaderRequestURL,
+                   @"requesting URLs are not same, %@ and %@", URL, imageView.imageLoaderRequestURL);
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
 }
 
 - (void)testLoadImageWithTwiceCallingWithCompletion
@@ -177,19 +173,16 @@
     URL = [NSURL URLWithString:@"http://test/white"];
 
     [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
-
         XCTAssertFalse(true,
                        @"need to not call block");
-
     }];
 
     URL = [NSURL URLWithString:@"http://test/black"];
     [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
-
         XCTAssertTrue([weakImageView.image isEqualToImage:self.blackImage],
                       @"They are not same data");
-
     }];
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
 }
 
 - (void)testLoadImageWithTwiceCallingInBlock
@@ -198,26 +191,21 @@
     whiteImageURL = [NSURL URLWithString:@"http://test/twice/white"];
     blackImageURL = [NSURL URLWithString:@"http://test/twice/black"];
 
-
     UIImageView *imageView = [UIImageView new];
 
     __weak typeof(imageView) weakImageView = imageView;
     [imageView setImageWithURL:whiteImageURL placeholderImage:nil completion:^(BOOL finished) {
 
         [weakImageView setImageWithURL:blackImageURL placeholderImage:nil completion:^(BOOL finished) {
-
             XCTAssertFalse(true,
                            @"need to not call block");
-
         }];
 
         [weakImageView setImageWithURL:whiteImageURL placeholderImage:nil completion:^(BOOL finished) {
-
             XCTAssertTrue([weakImageView.image isEqualToImage:self.whiteImage],
                           @"They are not same data");
-
         }];
-
     }];
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
 }
 @end

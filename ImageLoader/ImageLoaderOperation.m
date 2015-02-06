@@ -113,7 +113,9 @@
         __weak typeof(self) wSelf = self;
         self.completionBlock = ^{
             for (ImageLoaderOperationCompletionBlock *block in wSelf.completionBlocks) {
-                block.completionBlock(wSelf.request, wSelf.responseData);
+                if (block.completionBlock) {
+                    block.completionBlock(wSelf.request, wSelf.responseData);
+                }
             }
         };
     }
@@ -132,7 +134,15 @@
 - (void)removeCompletionBlockWithIndex:(NSUInteger)index
 {
     [self _removeCompletionBlockWithIndex:index];
-    if (![self.completionBlocks count] &&
+
+    BOOL hasCompletionBlock = NO;
+    for (ImageLoaderOperationCompletionBlock *block in self.completionBlocks) {
+        if (block.completionBlock) {
+            hasCompletionBlock = YES;
+            break;
+        }
+    }
+    if (!hasCompletionBlock &&
         !self.keepRequest) {
         [self cancel];
     }
@@ -140,14 +150,12 @@
 
 - (void)_removeCompletionBlockWithIndex:(NSUInteger)index
 {
-    NSMutableArray *completionBlocks = [@[] mutableCopy];
-    for (int i=0; i < [self.completionBlocks count]; i++) {
-        if (i != index) {
-            [completionBlocks addObject:self.completionBlocks[i]];
-        }
+    if (index >= self.completionBlocks.count) {
+        return;
     }
 
-    _completionBlocks = [completionBlocks copy];
+    ImageLoaderOperationCompletionBlock *block = self.completionBlocks[index];
+    block.completionBlock = nil;
 }
 
 #pragma mark - getter
