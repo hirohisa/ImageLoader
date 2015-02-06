@@ -19,4 +19,4 @@ pod:
 
 send-coverage:
 	coveralls \
-		-e ImageLoaderTests
+		-e ImageLoaderTests -e Pods -e ImageLoaderExample -e ImageLoader/UIImageView+ImageLoader.h

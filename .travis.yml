@@ -2,7 +2,7 @@ language: objective-c
 
 before_install:
   - gem install cocoapods
-  - sudo easy_install cpp-coveralls
+  - sudo pip install cpp-coveralls
 
 script:
   - make pod
