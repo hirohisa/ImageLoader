@@ -39,6 +39,16 @@
     [OHHTTPStubs shouldStubRequestsPassingTest:^BOOL(NSURLRequest *request) {
         return YES;
     } withStubResponse:^OHHTTPStubsResponse *(NSURLRequest *request) {
+        if ([request.URL.path isEqualToString:@"timeout"]) {
+            return [OHHTTPStubsResponse responseWithData:nil
+                                              statusCode:[request.URL.path intValue]
+                                            responseTime:31. headers:nil];
+        }
+        if (400 < [request.URL.path intValue] && [request.URL.path intValue] < 500) {
+            return [OHHTTPStubsResponse responseWithData:nil
+                                              statusCode:[request.URL.path intValue]
+                                            responseTime:1. headers:nil];
+        }
         return [OHHTTPStubsResponse responseWithData:nil
                                           statusCode:200
                                         responseTime:1. headers:nil];
@@ -68,6 +78,36 @@
     id valid = @[operation1, operation2];
     XCTAssertTrue([loader.operationQueue.operations isEqualToArray:valid],
                   @"operationQueue doesnt have operations");
+}
+
+- (void)testLoaderRunWith404
+{
+    ImageLoader *loader = [ImageLoader loader];
+
+    NSURL *URL;
+
+    URL = [NSURL URLWithString:@"http://test/404"];
+    [loader getImageWithURL:URL completion:^(NSURLRequest *request, UIImage *image) {
+        XCTAssertTrue(!image,
+                      @"image exist!");
+    }];
+
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2.]];
+}
+
+- (void)testLoaderRunWithTimeout
+{
+    ImageLoader *loader = [ImageLoader loader];
+
+    NSURL *URL;
+
+    URL = [NSURL URLWithString:@"http://test/timeout"];
+    [loader getImageWithURL:URL completion:^(NSURLRequest *request, UIImage *image) {
+        XCTAssertTrue(!image,
+                      @"image exist!");
+    }];
+
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:32.]];
 }
 
 - (void)testLoaderRunWithEmptyURL

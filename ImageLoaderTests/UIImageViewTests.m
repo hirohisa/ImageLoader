@@ -148,6 +148,30 @@
 
     UIImageView *imageView = [UIImageView new];
 
+    URL = [NSURL URLWithString:@"http://test/first"];
+
+    [imageView setImageWithURL:URL placeholderImage:nil completion:^(BOOL finished) {
+
+        XCTAssertFalse(true,
+                       @"need to not call block");
+
+    }];
+
+    URL = [NSURL URLWithString:@"http://test/second"];
+    [imageView setImageWithURL:URL];
+}
+
+- (void)testLoadImageWithTwiceCallingWithCompletion
+{
+    NSURL *URL;
+    UIImage *image;
+
+    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:@"white" ofType:@"png"];
+    NSData *data = UIImageJPEGRepresentation([UIImage imageWithContentsOfFile:path], 1.f);
+    image = ILOptimizedImageWithData(data);
+
+    UIImageView *imageView = [UIImageView new];
+
     __weak typeof(imageView) weakImageView = imageView;
 
     URL = [NSURL URLWithString:@"http://test/white"];
@@ -168,7 +192,7 @@
     }];
 }
 
-- (void)testLoadImageWithTwiceCalling2
+- (void)testLoadImageWithTwiceCallingInBlock
 {
     NSURL *whiteImageURL, *blackImageURL;
     whiteImageURL = [NSURL URLWithString:@"http://test/twice/white"];
