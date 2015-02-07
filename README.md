@@ -11,6 +11,14 @@ Features
 - [x] Loading images is handled by ImageLoader, not UIImageView.
 - [x] Easy to modify implementation from other modules
 
+Requirements
+----------
+
+- iOS 5.0+
+
+If your project's target is iOS 7.0+, use [ImageLoaderSwift](https://github.com/hirohisa/ImageLoaderSwift). It's A lightweight and fast image loader for iOS written in Swift.
+
+
 Installation
 ----------
 
