@@ -10,6 +10,7 @@ Features
 - [x] A module for cache can be set by yourself. [hirohisa/Diskcached](https://github.com/hirohisa/Diskcached)
 - [x] Loading images is handled by ImageLoader, not UIImageView.
 - [x] Easy to modify implementation from other modules
+- [x] Comprehensive Unit Test Coverage
 
 Requirements
 ----------
