@@ -201,3 +201,23 @@ void ILSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 }
 
 @end
+
+
+@implementation UIImageView (ImageLoaderSwift_Compatible)
+
+- (void)load:(NSURL *)URL
+{
+    [self il_setImageWithURL:URL placeholderImage:nil];
+}
+
+- (void)load:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage
+{
+    [self il_setImageWithURL:URL placeholderImage:placeholderImage];
+}
+
+- (void)load:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL))completion
+{
+    [self il_setImageWithURL:URL placeholderImage:placeholderImage completion:completion];
+}
+
+@end

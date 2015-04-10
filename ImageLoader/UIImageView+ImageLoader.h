@@ -25,3 +25,11 @@
 - (void)setImageWithURL:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL finished))completion;
 
 @end
+
+@interface UIImageView (ImageLoaderSwift_Compatible)
+
+- (void)load:(NSURL *)URL;
+- (void)load:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage;
+- (void)load:(NSURL *)URL placeholderImage:(UIImage *)placeholderImage completion:(void (^)(BOOL finished))completion;
+
+@end
