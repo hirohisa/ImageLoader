@@ -44,7 +44,6 @@ static const char *ImageLoaderCompletionBlockIndexKey = "imageLoaderCompletionBl
 
 - (void)setImageLoaderCompletionBlockIndex:(NSNumber *)imageLoaderCompletionBlockIndex
 {
-    NSLog(@"%s %@", __func__, imageLoaderCompletionBlockIndex);
     objc_setAssociatedObject(self, ImageLoaderCompletionBlockIndexKey, imageLoaderCompletionBlockIndex, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
