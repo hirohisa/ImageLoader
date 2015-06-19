@@ -30,7 +30,7 @@ There are two ways to use this in your project:
 - Install with CocoaPods to write Podfile
 ```ruby
 platform :ios
-pod 'ImageLoader', '~> 0.1.1'
+pod 'ImageLoader', '~> 0.1.9'
 ```
 
 Modify implementation from other modules
